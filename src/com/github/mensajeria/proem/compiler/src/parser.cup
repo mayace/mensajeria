@@ -1,0 +1,152 @@
+
+import com.github.proem.compiler.lib.Attr;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.HashSet;
+import java.lang.Thread.State;
+import java.awt.Dimension;
+import java.awt.Point;
+
+
+
+parser code {: 
+        
+        
+        public LinkedList<compiler.lib.Error> errores=new LinkedList<>();
+        
+        
+        public void report_error(String message, Object info){
+                compiler.lib.Error e=new compiler.lib.Error(message,null,null);
+                if(info instanceof java_cup.runtime.Symbol){
+                        e.setSym((java_cup.runtime.Symbol)info);
+                }
+                errores.add(e);
+        }
+        public void report_fatal_error(String message,Object info){
+                report_error(message,info);
+                errores.getLast().println();
+        }
+:};
+
+action code{:
+   
+:}
+
+/****************************************************************************************/
+terminal        String 		KW_INT,KW_STRING,KW_BOOLEAN,KW_QUEUE,KW_LIST,INT,STRING,BOOLEAN,ID,
+							EQUAL,COMA,PCOMA,OR,AND,NOT,DEQUAL,NEQUAL,BTHAN,LTHAN,BETHAN,LETHAN,
+							P1,P2,MINUS,PLUS,MULTI,DIV,NERROR,WHILE,WAIT,FOR,TO,IF,ELSE,SEND,IS,
+                            PUNTO,LL1,LL2
+							;
+non terminal    Attr        begin,body,list,stmt,declaracion,asignacion,struct,control,id_list,
+                            id_list2,id_list_item,tipo,expr,expr1,expr2,expr3,expr4,expr5,val,
+                            id,string,int,boolean,params,param_list,contro,while,for,if,elseif
+							;
+/****************************************************************************************/
+begin   ::= body
+            ;
+
+body	::=	list
+            |
+			;
+
+list    ::= list stmt
+            |stmt
+            ;
+stmt    ::= //declaracion
+            |asignacion
+            // |struct
+            // |control 
+            // |error
+            ;
+
+declaracion     ::= id_list IS tipo PCOMA
+                    ;
+id_list         ::= id_list COMA id_list_item
+                    |id_list_item
+                    ;
+id_list2        ::= id_list2 PUNTO id_list_item
+                    |id_list_item
+                    ;
+id_list_item    ::= id
+                    // |error
+                    ;
+tipo            ::= KW_LIST
+                    |KW_QUEUE
+                    |KW_BOOLEAN
+                    |KW_STRING
+                    |KW_INT
+                    // |error
+                    ;
+asignacion      ::= expr EQUAL id_list PCOMA
+                    ;
+
+expr            ::= expr OR expr1
+                    |expr1
+                    ;
+expr1           ::= expr1 AND expr2
+                    |expr2
+                    ;
+expr2           ::= expr2 LETHAN expr3
+                    |expr2 BETHAN expr3
+                    |expr2 LTHAN expr3
+                    |expr2 BTHAN expr3
+                    |expr2 DEQUAL expr3
+                    |expr2 NEQUAL expr3
+                    |expr3
+                    ;
+expr3           ::= expr3 PLUS expr4
+                    |expr3 MINUS expr4
+                    |expr4
+                    ;
+expr4           ::= expr4 MULTI expr5
+                    |expr4 DIV expr5
+                    |expr5
+                    ;
+expr5           ::= val
+                    |P1 expr P2
+                    |NOT expr
+                    // |MINUS expr
+                    // |error
+                    ;
+val             ::= id
+                    |boolean
+                    |string
+                    |int
+                    |struct
+                    ;
+id              ::= ID
+                    ;
+boolean         ::= BOOLEAN
+                    ;
+string          ::= STRING
+                    ;
+int             ::= INT
+                    ;
+struct          ::= id_list2 P1 params P2 PCOMA
+                    ;
+params          ::= param_list
+                    |
+                    ;
+param_list      ::= param_list COMA expr
+                    |expr
+                    ;
+control         ::= while
+                    |for
+                    |if
+                    ;
+while           ::= WHILE P1 expr P2 LL1 body LL2
+                    ;
+for             ::= FOR P1 id TO expr P2 LL1 body LL2
+                    ;
+if              ::= IF P1 expr P2 LL1 body LL2 elseif
+                    ;
+elseif         ::= ELSE LL1 body LL2
+                    |
+                    ;

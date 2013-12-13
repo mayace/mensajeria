@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="compiler" default="all" basedir=".">
+    
+    <property name="src.dir" value="${basedir}/src"/>
+    
+    <path id="lib">
+        <fileset dir="lib" includes="**/*.jar" />
+    </path>
+    
+    <taskdef  name="jflex" classname="JFlex.anttask.JFlexTask">
+        <classpath refid="lib"/>
+    </taskdef>
+    
+    <taskdef name="cup" classname="java_cup.anttask.CUPTask">
+        <classpath refid="lib"/>
+    </taskdef>
+    
+    <target name="cup">
+        <cup srcfile="${src.dir}/parser.cup"  symbols="Sym" parser="Parser" package="com.github.proem.compiler"  destdir="${basedir}"  />
+        
+    </target>
+    
+    <target name="jflex" depends="cup" >
+        <jflex file="${src.dir}/scanner.jflex" destdir="${basedir}" />
+    </target> 
+    
+    
+    
+    <target name="all" depends="jflex">
+        <!-- TODO define script. See Help menu or http://ant.apache.org/ -->
+        <echo>Compiled... </echo>
+    </target>
+</project>
