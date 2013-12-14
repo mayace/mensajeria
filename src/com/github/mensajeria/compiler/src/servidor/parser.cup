@@ -1,0 +1,76 @@
+begin       ::= input
+                |
+                ;
+// *********************************************************************************
+// Input - Contenido de la entrada
+// *********************************************************************************                
+input      	::= stmt_list
+                ;
+stmt_list   ::= stmt_list stmt
+                |stmt
+                ;
+stmt        ::= struct
+                |busqueda
+                ;
+// *********************************************************************************
+// Struct - Procesa las operaciones definidas que el servidor pueda hacer
+// *********************************************************************************
+struct      		::= LP ID RP LL1 body_struct LL2
+						|LP ID RP ID
+						|LP ID RP
+						;
+
+body_struct 		::= list_stmt_struct
+						|
+						;
+
+list_stmt_struct	::=	list_stmt_struct stmt_struct
+						|stmt_struct
+						;
+
+stmt_struct 		::=	struct
+						|ANY			//el valor que lleva
+						;
+// *********************************************************************************
+// Búsqueda - Procesa operaciones de búsqueda unicamente.
+// *********************************************************************************
+busqueda 			::=	body_busqueda
+						;
+body_busqueda 		::= list_stmt_busqueda
+						;
+list_stmt_busqueda 	::= list_stmt_busqueda stmt_busqueda
+						|stmt_busqueda
+						;
+stmt_busqueda 		::= BUSCAR expr PCOMA
+						|BUSCAR expr PCOMA
+						|BUCAR expr PCOMA
+						|BUCAR expr PCOMA
+						;
+expr 				::= expr OR expr1
+						|expr1
+						;
+expr1 				::= expr1 AND expr2
+						|expr2
+						;
+expr2 				::=	FECHA EQUAL val
+						|REMITENTE EQUAL val
+						|RECEPTOR EQUEAL val
+						|MENSAJE EQUAL val
+						;
+
+val 				::= string
+						|CONTIENE LP string RP
+						;
+string 				::= LQ body_string RQ
+						;
+body_string 		::= list_stmt_string
+						|
+						;
+list_stmt_string 	::= list_stmt_string stmt_string
+						|stmt_string
+						;
+stmt_string 		::= NUMERAL
+						|PORCIENTO
+						|CLOSEINT
+						|ANY
+						;
