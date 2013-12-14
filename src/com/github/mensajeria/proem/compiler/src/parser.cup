@@ -1,4 +1,3 @@
-
 import com.github.proem.compiler.lib.Attr;
 
 import java.io.File;
@@ -59,8 +58,8 @@ body	::=	list
 list    ::= list stmt
             |stmt
             ;
-stmt    ::= //declaracion
-            |asignacion
+stmt    ::= declaracion
+            //|asignacion
             // |struct
             // |control 
             // |error
@@ -68,12 +67,11 @@ stmt    ::= //declaracion
 
 declaracion     ::= id_list IS tipo PCOMA
                     ;
-id_list         ::= id_list COMA id_list_item
-                    |id_list_item
+id_list         ::= id_list COMA ID
+                    |id_list PUNTO ID
+                    |ID
                     ;
-id_list2        ::= id_list2 PUNTO id_list_item
-                    |id_list_item
-                    ;
+
 id_list_item    ::= id
                     // |error
                     ;
@@ -109,7 +107,7 @@ expr4           ::= expr4 MULTI expr5
                     |expr4 DIV expr5
                     |expr5
                     ;
-expr5           ::= val
+expr5           ::= id
                     |P1 expr P2
                     |NOT expr
                     // |MINUS expr
