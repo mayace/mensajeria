@@ -1,0 +1,80 @@
+begin       ::= input
+                |
+                ;
+// *********************************************************************************
+// Input - Contenido de la entrada
+// *********************************************************************************                
+input      	::= stmt_list
+                ;
+stmt_list   ::= stmt_list stmt
+                |stmt
+                ;
+stmt        ::= account
+				|message
+				|contacts
+                ;
+// *********************************************************************************
+// Account - Procesa información de la cuenta
+// *********************************************************************************             
+
+account 			::= CUENTA LP account_body RP
+						;
+
+account_body		::=	account_stmt_list
+						;
+
+account_stmt_list 	::= account_stmt_list account_stmt
+						|account_stmt
+						;
+account_stmt 		::= account_name
+						|account_pass
+						;
+account_name 		::= USUARIO EQUAL ID PCOMA
+						;
+account_pass 		::= PASSWORD EQUAL ANY PCOMA
+						;
+// *********************************************************************************
+// Message - Procesa información de un mensaje
+// *********************************************************************************             
+message 			::=	MENSAJE LP message_body RP
+						;
+message_body		::= message_stmt_list
+						;
+message_stmt_list 	::= message_stmt_list message_stmt
+						|message_stmt
+						;
+message_stmt 		::= message_sender
+						|message_receiver
+						|message_date
+						|message_content
+						;
+message_sender 		::= EMISOR EQUAL ID PCOMA
+						;
+message_receiver 	::= RECEPTOR EQUAL ID PCOMA
+						;
+message_date 		::= FECHA EQUAL fecha hora PCOMA
+						;
+message_content 	::= TAG_CONTENIDO LP ANY RP
+						;
+fecha 				::= INT DIAGONAL INT DIAGONAL INT
+						;
+hora 				::= INT DPUNTO INT DPUNTO INT
+						;
+// *********************************************************************************
+// Contacto - Procesa informaciónd e un contacto
+// ********************************************************************************* 
+
+contacts 			::= CONTACTO LP contacts_body RP
+						;
+contacts_body		::= contacts_stmt_list
+						;
+contacts_stmt_list 	::= contacts_stmt_list contacts_stmt
+						|contacts_stmt
+						;
+contacts_stmt 		::= contacts_account
+						|contacts_contact
+						;
+contacts_account 	::= CUENTA ID
+						;
+contacts_contact 	::= CONTACTO ID
+						;
