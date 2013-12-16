@@ -3,8 +3,21 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-
 package com.github.mensajeria.servidor.gui;
+
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.swing.JToggleButton;
 
 /**
  *
@@ -17,6 +30,7 @@ public class Win extends javax.swing.JFrame {
      */
     public Win() {
         initComponents();
+        init();
     }
 
     /**
@@ -28,6 +42,14 @@ public class Win extends javax.swing.JFrame {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
+        toolbarStatus = new javax.swing.JToolBar();
+        lblInfo = new javax.swing.JLabel();
+        pnlBase = new javax.swing.JPanel();
+        jScrollPane1 = new javax.swing.JScrollPane();
+        listUser = new javax.swing.JList();
+        bttnOn = new javax.swing.JToggleButton();
+        txtPort = new javax.swing.JTextField();
+        lblPort = new javax.swing.JLabel();
         menuBar = new javax.swing.JMenuBar();
         fileMenu = new javax.swing.JMenu();
         openMenuItem = new javax.swing.JMenuItem();
@@ -44,6 +66,65 @@ public class Win extends javax.swing.JFrame {
         aboutMenuItem = new javax.swing.JMenuItem();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        setTitle("Servidor");
+
+        toolbarStatus.setFloatable(false);
+        toolbarStatus.setRollover(true);
+
+        lblInfo.setText("Estado...");
+        toolbarStatus.add(lblInfo);
+
+        getContentPane().add(toolbarStatus, java.awt.BorderLayout.PAGE_END);
+
+        listUser.setModel(new javax.swing.AbstractListModel() {
+            String[] strings = { "Item 1", "Item 2", "Item 3", "Item 4", "Item 5" };
+            public int getSize() { return strings.length; }
+            public Object getElementAt(int i) { return strings[i]; }
+        });
+        jScrollPane1.setViewportView(listUser);
+
+        bttnOn.setText("DESACTIVADO");
+        bttnOn.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                bttnOnActionPerformed(evt);
+            }
+        });
+
+        txtPort.setText("9999");
+
+        lblPort.setText("Port:");
+
+        javax.swing.GroupLayout pnlBaseLayout = new javax.swing.GroupLayout(pnlBase);
+        pnlBase.setLayout(pnlBaseLayout);
+        pnlBaseLayout.setHorizontalGroup(
+            pnlBaseLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, pnlBaseLayout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(lblPort)
+                .addGap(18, 18, 18)
+                .addComponent(txtPort, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addComponent(bttnOn)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 69, Short.MAX_VALUE)
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 185, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap())
+        );
+        pnlBaseLayout.setVerticalGroup(
+            pnlBaseLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(pnlBaseLayout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
+                .addContainerGap())
+            .addGroup(pnlBaseLayout.createSequentialGroup()
+                .addGap(19, 19, 19)
+                .addGroup(pnlBaseLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(txtPort, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(lblPort)
+                    .addComponent(bttnOn))
+                .addGap(38, 129, Short.MAX_VALUE))
+        );
+
+        getContentPane().add(pnlBase, java.awt.BorderLayout.CENTER);
 
         fileMenu.setMnemonic('f');
         fileMenu.setText("File");
@@ -108,23 +189,17 @@ public class Win extends javax.swing.JFrame {
 
         setJMenuBar(menuBar);
 
-        javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
-        getContentPane().setLayout(layout);
-        layout.setHorizontalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 400, Short.MAX_VALUE)
-        );
-        layout.setVerticalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 279, Short.MAX_VALUE)
-        );
-
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
     private void exitMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_exitMenuItemActionPerformed
         System.exit(0);
     }//GEN-LAST:event_exitMenuItemActionPerformed
+
+    private void bttnOnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_bttnOnActionPerformed
+        // TODO add your handling code here:
+
+    }//GEN-LAST:event_bttnOnActionPerformed
 
     /**
      * @param args the command line arguments
@@ -163,6 +238,7 @@ public class Win extends javax.swing.JFrame {
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JMenuItem aboutMenuItem;
+    private javax.swing.JToggleButton bttnOn;
     private javax.swing.JMenuItem contentsMenuItem;
     private javax.swing.JMenuItem copyMenuItem;
     private javax.swing.JMenuItem cutMenuItem;
@@ -171,11 +247,58 @@ public class Win extends javax.swing.JFrame {
     private javax.swing.JMenuItem exitMenuItem;
     private javax.swing.JMenu fileMenu;
     private javax.swing.JMenu helpMenu;
+    private javax.swing.JScrollPane jScrollPane1;
+    private javax.swing.JLabel lblInfo;
+    private javax.swing.JLabel lblPort;
+    private javax.swing.JList listUser;
     private javax.swing.JMenuBar menuBar;
     private javax.swing.JMenuItem openMenuItem;
     private javax.swing.JMenuItem pasteMenuItem;
+    private javax.swing.JPanel pnlBase;
     private javax.swing.JMenuItem saveAsMenuItem;
     private javax.swing.JMenuItem saveMenuItem;
+    private javax.swing.JToolBar toolbarStatus;
+    private javax.swing.JTextField txtPort;
     // End of variables declaration//GEN-END:variables
+
+    private void init() {
+        bttnOn.addItemListener(new ItemListener() {
+
+            @Override
+            public void itemStateChanged(ItemEvent ie) {
+                if (ie.getStateChange() == ItemEvent.SELECTED) {
+                    
+                    listUser.removeAll();
+                    
+                    final String txtPort_text = txtPort.getText().trim();
+                    final int port = (txtPort_text.isEmpty() ? 9999 : Integer.parseInt(txtPort_text));
+                    
+                    new Thread(new Runnable() {
+
+                        @Override
+                        public void run() {
+                            try {
+                                ServerSocket ss = new ServerSocket(port);
+                                for(;;){
+                                    Socket accept = ss.accept();
+                                    PrintWriter out = new PrintWriter(accept.getOutputStream());
+                                    BufferedReader in = new BufferedReader(new InputStreamReader(accept.getInputStream()));
+                                    
+                                    
+                                    
+                                }
+                            } catch (IOException ex) {
+                                Logger.getLogger(Win.class.getName()).log(Level.SEVERE, null, ex);
+                            }
+                        }
+                    }).start();
+                    
+                    ((JToggleButton)ie.getSource()).setText("ACTIVADO");
+                } else {
+                    ((JToggleButton)ie.getSource()).setText("DESACTIVADO");
+                }
+            }
+        });
+    }
 
 }

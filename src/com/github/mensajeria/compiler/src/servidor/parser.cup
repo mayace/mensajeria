@@ -1,3 +1,57 @@
+package com.github.mensajeria.compiler.servidor;
+
+
+import com.github.mensajeria.compiler.lib.Attr;
+import com.github.mensajeria.compiler.lib.CompilerError;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.HashSet;
+import java.lang.Thread.State;
+import java.awt.Dimension;
+import java.awt.Point;
+
+//===============================================================================================//
+//===============================================================================================//
+
+parser code {: 
+        
+        
+        public LinkedList<CompilerError> errores=new LinkedList<>();
+        
+        
+        public void report_error(String message, Object info){
+                CompilerError e=new CompilerError(message,null,null);
+                if(info instanceof java_cup.runtime.Symbol){
+                        e.setSym((java_cup.runtime.Symbol)info);
+                }
+                errores.add(e);
+        }
+        public void report_fatal_error(String message,Object info){
+                report_error(message,info);
+                errores.getLast().println();
+        }
+:};
+
+action code{::}
+   
+//===============================================================================================//
+//===============================================================================================//
+terminal        String 		LP,RP,ID,LL1,LL2,BUSCAR,PCOMA,AND,OR,EQUAL,FECHA,REMITENTE,
+							RECEPTOR,MENSAJE,CONTIENE,QUOTE,NUMERAL,PERCENT,CLOSEQ,ANY
+							;
+non terminal    Attr        input,stmt_list,stmt,struct,busqueda,body_struct,list_stmt_struct,
+							stmt_struct,body_busqueda,list_stmt_busqueda,stmt_busqueda,begin,
+							expr,expr1,expr2,val,string,body_string,list_stmt_string,stmt_string
+							;
+//===============================================================================================//
+//===============================================================================================//
+
 begin       ::= input
                 |
                 ;
@@ -10,7 +64,7 @@ stmt_list   ::= stmt_list stmt
                 |stmt
                 ;
 stmt        ::= struct
-                |busqueda
+                //|busqueda
                 ;
 // *********************************************************************************
 // Struct - Procesa las operaciones definidas que el servidor pueda hacer
@@ -21,7 +75,7 @@ struct      		::= LP ID RP LL1 body_struct LL2
 						;
 
 body_struct 		::= list_stmt_struct
-						|
+						|//null value
 						;
 
 list_stmt_struct	::=	list_stmt_struct stmt_struct
@@ -42,9 +96,6 @@ list_stmt_busqueda 	::= list_stmt_busqueda stmt_busqueda
 						|stmt_busqueda
 						;
 stmt_busqueda 		::= BUSCAR expr PCOMA
-						|BUSCAR expr PCOMA
-						|BUCAR expr PCOMA
-						|BUCAR expr PCOMA
 						;
 expr 				::= expr OR expr1
 						|expr1
@@ -54,14 +105,14 @@ expr1 				::= expr1 AND expr2
 						;
 expr2 				::=	FECHA EQUAL val
 						|REMITENTE EQUAL val
-						|RECEPTOR EQUEAL val
+						|RECEPTOR EQUAL val
 						|MENSAJE EQUAL val
 						;
 
 val 				::= string
 						|CONTIENE LP string RP
 						;
-string 				::= LQ body_string RQ
+string 				::= QUOTE body_string QUOTE
 						;
 body_string 		::= list_stmt_string
 						|
@@ -70,7 +121,7 @@ list_stmt_string 	::= list_stmt_string stmt_string
 						|stmt_string
 						;
 stmt_string 		::= NUMERAL
-						|PORCIENTO
-						|CLOSEINT
+						|PERCENT
+						|CLOSEQ
 						|ANY
 						;

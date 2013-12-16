@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package com.github.editor.gui;
+package com.github.mensajeria.editor.gui;
 
 import java.io.IOException;
 import java.util.logging.Level;
@@ -31,7 +31,6 @@ public class Win extends javax.swing.JFrame {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
-        tabPane1 = new com.github.editor.gui.TabPane();
         menuBar = new javax.swing.JMenuBar();
         fileMenu = new javax.swing.JMenu();
         openMenuItem = new javax.swing.JMenuItem();
@@ -49,7 +48,6 @@ public class Win extends javax.swing.JFrame {
         aboutMenuItem = new javax.swing.JMenuItem();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        getContentPane().add(tabPane1, java.awt.BorderLayout.CENTER);
 
         fileMenu.setMnemonic('f');
         fileMenu.setText("File");
@@ -150,39 +148,16 @@ public class Win extends javax.swing.JFrame {
     }//GEN-LAST:event_exitMenuItemActionPerformed
 
     private void newMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_newMenuItemActionPerformed
-        try {
-            // TODO add your handling code here:
-            tabPane1.nuevo();
-        } catch (IOException ex) {
-            Logger.getLogger(Win.class.getName()).log(Level.SEVERE, null, ex);
-        }
     }//GEN-LAST:event_newMenuItemActionPerformed
 
     private void openMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_openMenuItemActionPerformed
-        try {
-            // TODO add your handling code here:
-            tabPane1.abrir();
-        } catch (IOException ex) {
-            Logger.getLogger(Win.class.getName()).log(Level.SEVERE, null, ex);
-        }
     }//GEN-LAST:event_openMenuItemActionPerformed
 
     private void saveMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_saveMenuItemActionPerformed
-        try {
             // TODO add your handling code here:
-            tabPane1.guardar();
-        } catch (IOException ex) {
-            Logger.getLogger(Win.class.getName()).log(Level.SEVERE, null, ex);
-        }
     }//GEN-LAST:event_saveMenuItemActionPerformed
 
     private void saveAsMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_saveAsMenuItemActionPerformed
-        try {
-            // TODO add your handling code here:
-            tabPane1.guardarComo();
-        } catch (IOException ex) {
-            Logger.getLogger(Win.class.getName()).log(Level.SEVERE, null, ex);
-        }
     }//GEN-LAST:event_saveAsMenuItemActionPerformed
 
     
@@ -238,7 +213,6 @@ public class Win extends javax.swing.JFrame {
     private javax.swing.JMenuItem pasteMenuItem;
     private javax.swing.JMenuItem saveAsMenuItem;
     private javax.swing.JMenuItem saveMenuItem;
-    private com.github.editor.gui.TabPane tabPane1;
     // End of variables declaration//GEN-END:variables
 
 }

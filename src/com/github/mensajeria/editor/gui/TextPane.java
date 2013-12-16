@@ -4,7 +4,7 @@
  * and open the template in the editor.
  */
 
-package com.github.editor.gui;
+package com.github.mensajeria.editor.gui;
 
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;

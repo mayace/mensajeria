@@ -2,7 +2,7 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package compiler.lib;
+package com.github.mensajeria.compiler;
 
 import java_cup.runtime.Symbol;
 
@@ -10,7 +10,7 @@ import java_cup.runtime.Symbol;
  *
  * @author ce
  */
-public class Error {
+public class Err {
   public static String ERROR_CONVERT="No se puede convertir.";
   public static String ERROR_STMT="Se esperaba una sentencia.";
 
@@ -37,7 +37,7 @@ public class Error {
     LEXIC, SYNTACTIC, SEMANTIC
   }
 
-  public Error(String msg, Symbol sym, Type type) {
+  public Err(String msg, Symbol sym, Type type) {
     this.msg = msg;
     this.sym = sym;
     this.type = type;

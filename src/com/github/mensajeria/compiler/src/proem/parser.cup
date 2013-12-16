@@ -1,0 +1,243 @@
+ package com.github.mensajeria.compiler.proem;
+
+
+import com.github.mensajeria.compiler.Sim;
+import com.github.mensajeria.compiler.Attr;
+import com.github.mensajeria.compiler.Err;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.HashSet;
+import java.lang.Thread.State;
+import java.awt.Dimension;
+import java.awt.Point;
+
+
+
+parser code {: 
+    
+    public HashMap<String,Sim> symtable = new HashMap<>();
+    public LinkedList<Err> errors = new LinkedList<>();
+
+    public Object[] pila = new Object[100];
+    public int p = 0;
+    
+
+
+    public void report_error(String message, Object info){
+        Err e = new Err(message,null,null);
+        if(info instanceof java_cup.runtime.Symbol){
+            e.setSym((java_cup.runtime.Symbol)info);
+        }
+        errors.add(e);
+        e.println();
+    }
+    public void report_fatal_error(String message,Object info){
+        report_error(message,info);
+        errors.getLast().println();
+    }
+:};
+
+action code{:
+    Sim getSim(String key){
+        return parser.symtable.get(key);
+    }
+    Sim addSim(String name,String type,Object data){
+        //pre
+        System.out.println("Added Sim: " + name);
+        //mid
+        int pos = parser.p;
+        String key = name;
+        Sim val = new Sim(name,type,pos);
+        parser.symtable.put(key,val);
+        parser.pila[pos] = data;
+        //post
+        parser.p++;
+        System.out.println("SimTable Size: " + parser.symtable.size());
+        return val;
+    }
+
+    void report_error(String msg,Object info){
+        parser.report_error(msg,info);
+    }
+:}
+
+/****************************************************************************************/
+terminal        String 		KW_INT,KW_STRING,KW_BOOLEAN,KW_QUEUE,KW_LIST,INT,STRING,BOOLEAN,ID,
+							EQUAL,COMA,PCOMA,OR,AND,NOT,DEQUAL,NEQUAL,BTHAN,LTHAN,BETHAN,LETHAN,
+							LP,RP,MINUS,PLUS,MULTI,DIV,NERROR,WHILE,WAIT,FOR,TO,IF,ELSE,SEND,IS,
+                            PUNTO,LL1,LL2
+							;
+non terminal    Attr        begin,input,stmt_list,stmt,declaracion,asignacion,control,id_list,
+                            esperar,enviar,tipo,expr,expr1,expr2,expr3,expr4,expr5,
+                            id,string,int,boolean,params,expr_list,while,for,if,elseif
+							;
+/****************************************************************************************/
+begin       ::= input   {:System.out.println("Compiled...");:}
+                |
+                ;
+// *********************************************************************************
+// Input - Contenido de la entrada
+// *********************************************************************************
+input       ::=	stmt_list
+                ;
+
+stmt_list   ::= stmt_list stmt
+                |stmt
+                ;
+stmt        ::= declaracion:x            
+                |asignacion:x
+                |esperar:x
+                |enviar:x
+                |control:x
+                ;
+declaracion ::= id_list:l IS tipo:t PCOMA
+                {:
+                    for(Attr a : l.getList("list")){
+
+                        String name = a.getString("val");
+                        String type = t.getString("type");
+
+
+                        if(getSim(name) == null){
+                            if(type == null){
+                                addSim(name,type,null);
+                            }
+                        } else{
+                            report_error("Ya existe la variable '" + name + "'", a.getSymbol("info"));
+                        }
+                    }
+                :}
+                ;
+asignacion  ::= expr_list EQUAL id_list PCOMA
+                |expr_list LP params RP EQUAL id_list PCOMA
+                ;
+esperar     ::= WAIT LP expr_list RP PCOMA
+                ;
+enviar      ::= SEND LP expr_list RP PCOMA
+                ;
+
+id_list         ::= id_list:x COMA id:x1    
+                    {:
+                        x.getList("list").add(x1);
+                        RESULT = x;
+                    :}
+                    |id:x                   
+                    {:
+                        Attr a = new Attr("list",new ArrayList<Attr>());
+                        a.getList("list").add(x);
+                        RESULT = a;
+                    :}
+                    ;
+
+tipo            ::= KW_LIST         {:RESULT = new Attr("tipo","list");:}
+                    |KW_QUEUE       {:RESULT = new Attr("tipo","queue");:}
+                    |KW_BOOLEAN     {:RESULT = new Attr("tipo","boolean");:}
+                    |KW_STRING      {:RESULT = new Attr("tipo","string");:}
+                    |KW_INT         {:RESULT = new Attr("tipo","int");:}
+                    |error          {:RESULT = new Attr("tipo",null);:}
+                    ;
+
+
+expr            ::= expr:x OR expr1:x1
+                    |expr1:x                   {:RESULT = x;:}
+                    ;
+expr1           ::= expr1:x AND expr2:x1
+                    |expr2:x                   {:RESULT = x;:}
+                    ;
+expr2           ::= expr2:x LETHAN expr3:x1
+                    |expr2:x BETHAN expr3:x1
+                    |expr2:x LTHAN expr3:x1
+                    |expr2:x BTHAN expr3:x1
+                    |expr2:x DEQUAL expr3:x1
+                    |expr2:x NEQUAL expr3:x1
+                    |expr3:x                    {:RESULT = x;:}
+                    ;
+expr3           ::= expr3:x PLUS expr4:x1
+                    |expr3:x MINUS expr4:x1
+                    |expr4:x                    {:RESULT = x;:}
+                    ;
+expr4           ::= expr4:x MULTI expr5:x1
+                    |expr4:x DIV expr5:x1
+                    |expr5:x                    {:RESULT = x;:}
+                    ;
+expr5           ::= id:x            {:RESULT = x;:}
+                    |boolean:x      {:RESULT = x;:}
+                    |string:x       {:RESULT = x;:}
+                    |int:x          {:RESULT = x;:}
+                    |LP expr:x RP   {:RESULT = x;:}
+                    ;
+
+
+boolean         ::= BOOLEAN:x   {:
+                                    Attr a = new Attr();
+                                    a.set("val",x);
+                                    a.set("type","boolean");
+                                    a.set("info",CUP$Parser$stack.peek());
+                                    RESULT = a;
+                                :}
+                    ;
+string          ::= STRING:x     {:
+                                    Attr a = new Attr();
+                                    a.set("val",x);
+                                    a.set("type","string");
+                                    a.set("info",CUP$Parser$stack.peek());
+                                    RESULT = a;
+                                :}
+                    ;
+int             ::= INT:x       {:
+                                    Attr a = new Attr();
+                                    a.set("val",x);
+                                    a.set("type","int");
+                                    a.set("info",CUP$Parser$stack.peek());
+                                    RESULT = a;
+                                :}
+                    ;
+id              ::= ID:x        {:
+                                    String key = x;
+                                    String type = null;
+                                    boolean exists = false;
+
+                                    Sim sim = getSim(key);
+
+                                    if(sim != null){
+                                        type = sim.getType();
+                                        exists = true;
+                                    }
+
+
+                                    Attr a = new Attr();
+                                    a.set("val",key);
+                                    a.set("type",type);
+                                    a.set("id",true);
+                                    a.set("exists",exists);
+                                    a.set("info",CUP$Parser$stack.peek());
+                                    RESULT = a;
+                                :}
+                    ;
+
+params          ::= expr_list
+                    |
+                    ;
+expr_list       ::= //expr_list COMA expr
+                    expr_list PUNTO expr
+                    |expr
+                    ;
+control         ::= while
+                    |for
+                    |if
+                    ;
+while           ::= WHILE LP expr RP LL1 input LL2
+                    ;
+for             ::= FOR LP id TO expr RP LL1 input LL2
+                    ;
+if              ::= IF LP expr RP LL1 input LL2 elseif
+                    ;
+elseif          ::= ELSE LL1 input LL2
+                    |
+                    ;

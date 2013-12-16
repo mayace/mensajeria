@@ -1,0 +1,199 @@
+ package com.github.mensajeria.compiler.proem;
+
+
+import com.github.mensajeria.compiler.Sim;
+import com.github.mensajeria.compiler.Attr;
+import com.github.mensajeria.compiler.Err;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.HashSet;
+import java.lang.Thread.State;
+import java.awt.Dimension;
+import java.awt.Point;
+
+
+
+parser code {: 
+    
+    public HashMap<String,Sym> symtable = new HashMap<>();
+    public LinkedList<Err> errors = new LinkedList<>();
+
+
+    Sym getSym(String key){
+        symtable.get(key);
+    }
+    Sym putSym(String name,String type,int pos){
+        String key = name;
+        Sym val = new Sym(name,type,pos);
+        symtable.put(key,val)
+        return val;
+    }
+
+
+    public void report_error(String message, Object info){
+        Err e=new Err(message,null,null);
+        if(info instanceof java_cup.runtime.Symbol){
+                e.setSym((java_cup.runtime.Symbol)info);
+        }
+        errors.add(e);
+    }
+    public void report_fatal_error(String message,Object info){
+        report_error(message,info);
+        errors.getLast().println();
+    }
+:};
+
+action code{:
+   
+:}
+
+/****************************************************************************************/
+terminal        String 		KW_INT,KW_STRING,KW_BOOLEAN,KW_QUEUE,KW_LIST,INT,STRING,BOOLEAN,ID,
+							EQUAL,COMA,PCOMA,OR,AND,NOT,DEQUAL,NEQUAL,BTHAN,LTHAN,BETHAN,LETHAN,
+							LP,RP,MINUS,PLUS,MULTI,DIV,NERROR,WHILE,WAIT,FOR,TO,IF,ELSE,SEND,IS,
+                            PUNTO,LL1,LL2
+							;
+non terminal    Attr        begin,input,stmt_list,stmt,declaracion,asignacion,struct,control,id_list,
+                            id_list2,id_list_item,tipo,expr,expr1,expr2,expr3,expr4,expr5,val,
+                            id,string,int,boolean,params,expr_list,contro,while,for,if,elseif
+							;
+/****************************************************************************************/
+begin       ::= input   {:System.out.println("Compiled...");:}
+                |
+                ;
+
+input       ::=	stmt_list
+                ;
+
+stmt_list   ::= stmt_list stmt
+                |stmt
+                ;
+stmt        ::= expr IS tipo PCOMA
+                |expr EQUAL id_list PCOMA
+                //|control
+                //id_list
+                ;
+
+declaracion     ::= id_list IS tipo PCOMA
+                    ;
+id_list         ::= id_list PUNTO id:x
+                    |id_list COMA id
+                    |id:x               
+                    ;
+
+tipo            ::= KW_LIST
+                    |KW_QUEUE
+                    |KW_BOOLEAN
+                    |KW_STRING
+                    |KW_INT
+                    // |error
+                    ;
+asignacion      ::= expr EQUAL id_list PCOMA
+                    ;
+
+expr            ::= expr OR expr1
+                    |expr1
+                    ;
+expr1           ::= expr1 AND expr2
+                    |expr2
+                    ;
+expr2           ::= expr2 LETHAN expr3
+                    |expr2 BETHAN expr3
+                    |expr2 LTHAN expr3
+                    |expr2 BTHAN expr3
+                    |expr2 DEQUAL expr3
+                    |expr2 NEQUAL expr3
+                    |expr3
+                    ;
+expr3           ::= expr3 PLUS expr4
+                    |expr3 MINUS expr4
+                    |expr4
+                    ;
+expr4           ::= expr4 MULTI expr5
+                    |expr4 DIV expr5
+                    |expr5
+                    ;
+expr5           ::= id_list 
+                    //|id_list LP params RP
+                    |boolean
+                    |string
+                    |int
+                    |SEND LP expr_list RP
+                    ;
+val             ::= id_list 
+                    //|id_list LP params RP
+                    |boolean
+                    |string
+                    |int
+                    |SEND LP expr_list RP
+                    ;
+
+
+boolean         ::= BOOLEAN:x   {:
+                                    Attr a = new Attr();
+                                    a.set("val",x);
+                                    a.set("type","boolean");
+                                    a.set("info",CUP$Parser$stack.peek());
+                                    RESULT = a;
+                                :}
+                    ;
+string          ::= STRING:x     {:
+                                    Attr a = new Attr();
+                                    a.set("val",x);
+                                    a.set("type","string");
+                                    a.set("info",CUP$Parser$stack.peek());
+                                    RESULT = a;
+                                :}
+                    ;
+int             ::= INT:x       {:
+                                    Attr a = new Attr();
+                                    a.set("val",x);
+                                    a.set("type","int");
+                                    a.set("info",CUP$Parser$stack.peek());
+                                    RESULT = a;
+                                :}
+                    ;
+id              ::= ID:x        {:
+                                    String key = x;
+                                    String type = null;
+
+                                    Sym sym = getSym(key);
+
+                                    if(sym != null){
+                                        type = sym.getType();
+                                    }
+
+
+                                    Attr a = new Attr();
+                                    a.set("val",x);
+                                    a.set("type",null);
+                                    a.set("info",CUP$Parser$stack.peek());
+                                    RESULT = a;
+                                :}
+                    ;
+
+params          ::= expr_list
+                    |
+                    ;
+expr_list       ::= expr_list COMA expr
+                    |expr
+                    ;
+control         ::= while
+                    |for
+                    |if
+                    ;
+while           ::= WHILE LP expr RP LL1 input LL2
+                    ;
+for             ::= FOR LP id TO expr RP LL1 input LL2
+                    ;
+if              ::= IF LP expr RP LL1 input LL2 elseif
+                    ;
+elseif          ::= ELSE LL1 input LL2
+                    |
+                    ;

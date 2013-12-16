@@ -3,10 +3,12 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
+package com.github.mensajeria.proem.gui;
 
-package com.github.proem.gui;
-
+import com.github.mensajeria.compiler.proem.Parser;
+import com.github.mensajeria.compiler.proem.Scanner;
 import java.io.IOException;
+import java.io.StringReader;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -32,11 +34,13 @@ public class Win extends javax.swing.JFrame {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
-        tabpane = new com.github.editor.gui.TabPane();
         toolbar = new javax.swing.JToolBar();
         bttnTransmitir = new javax.swing.JButton();
+        tabpane = new com.github.mensajeria.editor.gui.TabPane();
         menuBar = new javax.swing.JMenuBar();
         fileMenu = new javax.swing.JMenu();
+        transmitirMenuItem = new javax.swing.JMenuItem();
+        jSeparator1 = new javax.swing.JPopupMenu.Separator();
         NewMenuItem = new javax.swing.JMenuItem();
         openMenuItem = new javax.swing.JMenuItem();
         saveMenuItem = new javax.swing.JMenuItem();
@@ -54,7 +58,6 @@ public class Win extends javax.swing.JFrame {
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("ProEM");
         setPreferredSize(new java.awt.Dimension(800, 600));
-        getContentPane().add(tabpane, java.awt.BorderLayout.CENTER);
 
         toolbar.setFloatable(false);
         toolbar.setRollover(true);
@@ -71,9 +74,20 @@ public class Win extends javax.swing.JFrame {
         toolbar.add(bttnTransmitir);
 
         getContentPane().add(toolbar, java.awt.BorderLayout.PAGE_START);
+        getContentPane().add(tabpane, java.awt.BorderLayout.CENTER);
 
         fileMenu.setMnemonic('f');
         fileMenu.setText("File");
+
+        transmitirMenuItem.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_T, java.awt.event.InputEvent.CTRL_MASK));
+        transmitirMenuItem.setText("Transmitir");
+        transmitirMenuItem.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                transmitirMenuItemActionPerformed(evt);
+            }
+        });
+        fileMenu.add(transmitirMenuItem);
+        fileMenu.add(jSeparator1);
 
         NewMenuItem.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_N, java.awt.event.InputEvent.CTRL_MASK));
         NewMenuItem.setText("New");
@@ -172,7 +186,6 @@ public class Win extends javax.swing.JFrame {
 
     private void NewMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_NewMenuItemActionPerformed
         try {
-            // TODO add your handling code here:
             tabpane.nuevo();
         } catch (IOException ex) {
             Logger.getLogger(Win.class.getName()).log(Level.SEVERE, null, ex);
@@ -181,17 +194,14 @@ public class Win extends javax.swing.JFrame {
 
     private void openMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_openMenuItemActionPerformed
         try {
-            // TODO add your handling code here:
             tabpane.abrir();
         } catch (IOException ex) {
             Logger.getLogger(Win.class.getName()).log(Level.SEVERE, null, ex);
         }
-        
     }//GEN-LAST:event_openMenuItemActionPerformed
 
     private void saveMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_saveMenuItemActionPerformed
         try {
-            // TODO add your handling code here:
             tabpane.guardar();
         } catch (IOException ex) {
             Logger.getLogger(Win.class.getName()).log(Level.SEVERE, null, ex);
@@ -200,7 +210,6 @@ public class Win extends javax.swing.JFrame {
 
     private void saveAsMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_saveAsMenuItemActionPerformed
         try {
-            // TODO add your handling code here:
             tabpane.guardarComo();
         } catch (IOException ex) {
             Logger.getLogger(Win.class.getName()).log(Level.SEVERE, null, ex);
@@ -209,8 +218,25 @@ public class Win extends javax.swing.JFrame {
 
     private void bttnTransmitirActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_bttnTransmitirActionPerformed
         // TODO add your handling code here:
+        transmitirMenuItemActionPerformed(evt);
         
     }//GEN-LAST:event_bttnTransmitirActionPerformed
+
+    private void transmitirMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_transmitirMenuItemActionPerformed
+        // TODO add your handling code here:
+        String text = tabpane.getText();
+        if (text != null && !text.trim().equals("")) {
+            saveMenuItemActionPerformed(evt);
+            Scanner s = new Scanner(new StringReader(text));
+            Parser p = new Parser(s);
+            try {
+                p.parse(); 
+            } catch (Exception ex) {
+                Logger.getLogger(Win.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            
+        }
+    }//GEN-LAST:event_transmitirMenuItemActionPerformed
 
     /**
      * @param args the command line arguments
@@ -261,13 +287,15 @@ public class Win extends javax.swing.JFrame {
     private javax.swing.JMenuItem exitMenuItem;
     private javax.swing.JMenu fileMenu;
     private javax.swing.JMenu helpMenu;
+    private javax.swing.JPopupMenu.Separator jSeparator1;
     private javax.swing.JMenuBar menuBar;
     private javax.swing.JMenuItem openMenuItem;
     private javax.swing.JMenuItem pasteMenuItem;
     private javax.swing.JMenuItem saveAsMenuItem;
     private javax.swing.JMenuItem saveMenuItem;
-    private com.github.editor.gui.TabPane tabpane;
+    private com.github.mensajeria.editor.gui.TabPane tabpane;
     private javax.swing.JToolBar toolbar;
+    private javax.swing.JMenuItem transmitirMenuItem;
     // End of variables declaration//GEN-END:variables
 
 }

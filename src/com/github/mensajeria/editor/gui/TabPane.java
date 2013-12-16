@@ -3,8 +3,9 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package com.github.editor.gui;
+package com.github.mensajeria.editor.gui;
 
+import java.awt.Component;
 import java.awt.HeadlessException;
 import java.awt.event.ActionEvent;
 import java.io.File;
@@ -100,8 +101,7 @@ public class TabPane extends JTabbedPane {
             }
         }
     }
-    
-    
+
     public void guardarComo() throws IOException {
         TextPane c = (TextPane) getSelectedComponent();
         int index = getSelectedIndex();
@@ -134,9 +134,9 @@ public class TabPane extends JTabbedPane {
     private void agregar(Path p) throws IOException {
         String title = (p == null ? "Nuevo " + this.getTabCount() : p.getFileName().toString());
         TextPane editor = (p == null ? new TextPane() : new TextPane(readFile(p)));
-        String tooltip = (p == null? null: p.toString());
-        
-        this.addTab(title,null, editor,tooltip);
+        String tooltip = (p == null ? null : p.toString());
+
+        this.addTab(title, null, editor, tooltip);
         int index = this.indexOfComponent(editor);
         this.setSelectedIndex(index);
         this.mapIndex.put(index, (p == null ? Paths.get(title) : p));
@@ -171,7 +171,18 @@ public class TabPane extends JTabbedPane {
     }
 
     private String readFile(Path p) throws IOException {
-        return new String(Files.readAllBytes(p),"utf-8");
+        return new String(Files.readAllBytes(p), "utf-8");
     }
 
+    public String getText() {
+        String str = null;
+        Component comp =  getSelectedComponent();
+        
+        if(comp != null){
+            TextPane editor = (TextPane)comp;
+            str = editor.getTxtEditor().getText();
+        }
+        
+        return str;
+    }
 }

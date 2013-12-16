@@ -1,4 +1,6 @@
+package com.github.mensajeria.compiler.proem;
 
+import com.github.mensajeria.compiler.Err;
 
 import java_cup.runtime.Symbol;
 import java.util.LinkedList;
@@ -15,11 +17,11 @@ import java.lang.StringBuilder;
 
 %{
     /** Errores **/
-    public LinkedList<compiler.lib.Error> errores=new LinkedList<>();
+    public LinkedList<Err> errores=new LinkedList<>();
     private void error(String message) {
             
         Symbol sym=new Symbol(Sym.error, yyline, yycolumn, yytext());
-        compiler.lib.Error e=new compiler.lib.Error(message,sym,compiler.lib.Error.Type.LEXIC);
+        Err e=new Err(message,sym,Err.Type.LEXIC);
         errores.add(e);
     }
     /** String **/
@@ -82,9 +84,9 @@ SIMPLE_COMMENT  =        "//"[^\*\n\r]*{NEWLINE}
     "."                 {return symbol(Sym.PUNTO);}
     ";"                 {return symbol(Sym.PCOMA);}
     
-    "OR"                {return symbol(Sym.OR);}
-    "AND"               {return symbol(Sym.AND);}
-    "NOT"               {return symbol(Sym.NOT);}
+    "or"                {return symbol(Sym.OR);}
+    "and"               {return symbol(Sym.AND);}
+    "not"               {return symbol(Sym.NOT);}
     
     "=="                {return symbol(Sym.DEQUAL);}
     "!="                {return symbol(Sym.NEQUAL);}
@@ -93,8 +95,8 @@ SIMPLE_COMMENT  =        "//"[^\*\n\r]*{NEWLINE}
     ">="                {return symbol(Sym.BETHAN);}
     "<="                {return symbol(Sym.LETHAN);}
     
-    "("                 {return symbol(Sym.P1);}
-    ")"                 {return symbol(Sym.P2);}
+    "("                 {return symbol(Sym.LP);}
+    ")"                 {return symbol(Sym.RP);}
     "-"                 {return symbol(Sym.MINUS);}
     "+"                 {return symbol(Sym.PLUS);}
     "*"                 {return symbol(Sym.MULTI);}

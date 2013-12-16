@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="compiler" default="all" basedir=".">
+    
+    <property name="src.dir" value="${basedir}/src"/>
+    
+    <path id="lib">
+        <fileset dir="lib" includes="**/*.jar" />
+    </path>
+    
+    <taskdef  name="jflex" classname="JFlex.anttask.JFlexTask">
+        <classpath refid="lib"/>
+    </taskdef>
+    
+    <taskdef name="cup" classname="java_cup.anttask.CUPTask">
+        <classpath refid="lib"/>
+    </taskdef>
+    
+   
+    
+   
+    
+    <!-- SERVIDOR -->
+     <target name="servidor_cup">
+        <cup srcfile="${src.dir}/servidor/parser.cup"  symbols="Sym" parser="Parser" package="com.github.mensajeria.compiler.servidor"  destdir="${basedir}/servidor/"  />
+    </target>
+    <target name="servidor_jflex" depends="servidor_cup" >
+        <jflex file="${src.dir}/servidor/scanner.jflex" destdir="${basedir}/servidor/" />
+    </target> 
+    <target name="servidor" depends="servidor_jflex">
+        <echo>Servidor compilado...</echo>
+    </target>
+    
+    <!-- SERVIDOR FILE -->
+    <target name="servidor_cup_file">
+        <cup srcfile="${src.dir}/servidor/parser_file.cup"  symbols="Sym_file" parser="Parser_file" package="com.github.mensajeria.compiler.servidor"  destdir="${basedir}/servidor/"  />
+    </target>
+    <target name="servidor_jflex_file" depends="servidor_cup_file" >
+        <jflex file="${src.dir}/servidor/scanner_file.jflex" destdir="${basedir}/servidor/" />
+    </target> 
+    <target name="servidor_file" depends="servidor_jflex">
+        <echo>Servidor file compilado...</echo>
+    </target>
+    
+    <!-- TODO -->
+    <target name="all" depends="jflex">
+        <!-- TODO define script. See Help menu or http://ant.apache.org/ -->
+        <echo>Compiled... </echo>
+    </target>
+    
+</project>

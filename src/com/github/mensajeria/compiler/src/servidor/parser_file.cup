@@ -1,3 +1,57 @@
+package com.github.mensajeria.compiler.servidor;
+
+import com.github.mensajeria.compiler.lib.Attr;
+import com.github.mensajeria.compiler.lib.CompilerError;
+import java.io.File;
+import java.io.IOException;
+import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.HashSet;
+import java.lang.Thread.State;
+import java.awt.Dimension;
+import java.awt.Point;
+
+//===============================================================================================//
+//===============================================================================================//
+
+parser code {: 
+        
+        
+        public LinkedList<CompilerError> errores=new LinkedList<>();
+        
+        
+        public void report_error(String message, Object info){
+                CompilerError e=new CompilerError(message,null,null);
+                if(info instanceof java_cup.runtime.Symbol){
+                        e.setSym((java_cup.runtime.Symbol)info);
+                }
+                errores.add(e);
+        }
+        public void report_fatal_error(String message,Object info){
+                report_error(message,info);
+                errores.getLast().println();
+        }
+:};
+
+action code{:
+:}
+   
+//===============================================================================================//
+//===============================================================================================//
+terminal        String 		LP,RP,ID,CUENTA,USUARIO,EQUAL,ANY,PCOMA,EMISOR,MENSAJE,RECEPTOR,
+							PASSWORD,FECHA,CONTENIDO,INT,DIAGONAL,DPUNTO,CONTACTO,NERROR,CONTACTOS
+							;
+non terminal    Attr        input,stmt_list,stmt,account,message,contacts,account_stmt_list,account_stmt,
+							message_stmt_list,message_stmt,contacts_stmt_list,account_body,contacts_body,
+							message_body,contacts_stmt,account_name,account_pass,message_sender,
+							message_receiver,message_content,message_date,fecha,hora,contacts_account,
+							contacts_contact,begin
+							;
+//===============================================================================================//
+//===============================================================================================//
 begin       ::= input
                 |
                 ;
@@ -54,7 +108,7 @@ message_receiver 	::= RECEPTOR EQUAL ID PCOMA
 						;
 message_date 		::= FECHA EQUAL fecha hora PCOMA
 						;
-message_content 	::= TAG_CONTENIDO LP ANY RP
+message_content 	::= CONTENIDO LP ANY RP
 						;
 fecha 				::= INT DIAGONAL INT DIAGONAL INT
 						;
@@ -64,7 +118,7 @@ hora 				::= INT DPUNTO INT DPUNTO INT
 // Contacto - Procesa informaciónd e un contacto
 // ********************************************************************************* 
 
-contacts 			::= CONTACTO LP contacts_body RP
+contacts 			::= CONTACTOS LP contacts_body RP
 						;
 contacts_body		::= contacts_stmt_list
 						;
