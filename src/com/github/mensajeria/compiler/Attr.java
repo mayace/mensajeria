@@ -82,7 +82,7 @@ public class Attr extends HashMap<String, Object> {
      * @param nombre
      * @return null si no se encuentra el atributo ó no se puede convertir
      */
-    public Integer getInt(String nombre) {
+    public Integer getInteger(String nombre) {
         Integer val = null;
 
         if (this.containsKey(nombre)) {
@@ -147,7 +147,7 @@ public class Attr extends HashMap<String, Object> {
         }
         ArrayList<Integer> val2 = new ArrayList<>();
         for (Attr mc : val) {
-            Integer v = mc.getInt(nombre);
+            Integer v = mc.getInteger(nombre);
             if (v != null) {
                 val2.add(v);
             } else {
@@ -245,6 +245,13 @@ public class Attr extends HashMap<String, Object> {
         }
     }
 
+    public Nodo getNodo(String nombre){
+        try {
+            return ((Nodo) get(nombre));
+        } catch (Exception exc) {
+            return null;
+        }
+    }
     public Attr getMyClass(String nombre) {
         try {
             return ((Attr) get(nombre));

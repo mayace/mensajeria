@@ -374,7 +374,7 @@ public class Scanner implements java_cup.runtime.Scanner {
     private void error(String message) {
             
         Symbol sym=new Symbol(Sym.error, yyline, yycolumn, yytext());
-        Err e=new Err(message,sym,Err.Type.LEXIC);
+        Err e=new Err(message,sym,Err.TIPO.LEXICO);
         errores.add(e);
     }
     /** String **/
