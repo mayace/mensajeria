@@ -213,3 +213,16 @@ id 					::=	ID:x
                             RESULT = a;
 						:}
 						;
+
+
+
+
+id 					::=	ID:x
+						{:
+                            Attr a = new Attr();
+                            a.set("val",x);
+                            a.set("id",true);
+                            a.set("info",CUP$Parser$stack.peek());
+                            RESULT = a;
+						:}
+						;
