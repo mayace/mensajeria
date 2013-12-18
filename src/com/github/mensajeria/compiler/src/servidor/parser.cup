@@ -1,8 +1,8 @@
 package com.github.mensajeria.compiler.servidor;
 
 
-import com.github.mensajeria.compiler.lib.Attr;
-import com.github.mensajeria.compiler.lib.CompilerError;
+import com.github.mensajeria.compiler.Attr;
+import com.github.mensajeria.compiler.Err;
 
 import java.io.File;
 import java.io.IOException;
@@ -22,11 +22,11 @@ import java.awt.Point;
 parser code {: 
         
         
-        public LinkedList<CompilerError> errores=new LinkedList<>();
+        public LinkedList<Err> errores=new LinkedList<>();
         
         
         public void report_error(String message, Object info){
-                CompilerError e=new CompilerError(message,null,null);
+                Err e=new Err(message,null,null);
                 if(info instanceof java_cup.runtime.Symbol){
                         e.setSym((java_cup.runtime.Symbol)info);
                 }
@@ -43,11 +43,15 @@ action code{::}
 //===============================================================================================//
 //===============================================================================================//
 terminal        String 		LP,RP,ID,LL1,LL2,BUSCAR,PCOMA,AND,OR,EQUAL,FECHA,REMITENTE,
-							RECEPTOR,MENSAJE,CONTIENE,QUOTE,NUMERAL,PERCENT,CLOSEQ,ANY
+							RECEPTOR,MENSAJE,CONTIENE,QUOTE,NUMERAL,PERCENT,CLOSEQ,ST_CUENTA,
+							ST_LOGIN,ST_MENSAJE,ST_USUARIO,ST_PASSWORD,ST_MENSAJE,ST_RECEPTOR
 							;
 non terminal    Attr        input,stmt_list,stmt,struct,busqueda,body_struct,list_stmt_struct,
-							stmt_struct,body_busqueda,list_stmt_busqueda,stmt_busqueda,begin,
-							expr,expr1,expr2,val,string,body_string,list_stmt_string,stmt_string
+							stmt_struct,busqueda_body,busqueda_stmt_list,busqueda_stmt,begin,
+							expr,expr1,expr2,val,string,body_string,list_stmt_string,stmt_string,
+							cuenta,cuenta_body,cuenta_stmt_list,cuenta_stmt,login,mensaje,mensaje_body,
+							mensaje_stmt_list,mensaje_stmt,usuario,password,emisor,receptor,
+							st_receptor_body,st_receptor_stmt_list,st_receptor_stmt,id
 							;
 //===============================================================================================//
 //===============================================================================================//
@@ -69,33 +73,105 @@ stmt        ::= struct
 // *********************************************************************************
 // Struct - Procesa las operaciones definidas que el servidor pueda hacer
 // *********************************************************************************
-struct      		::= LP ID RP LL1 body_struct LL2
-						|LP ID RP ID
-						|LP ID RP
+struct      		::= cuenta
+						|login
+						|mensaje
+						;
+// LOGIN
+login 				::= ST_LOGIN LL1 cuenta_body:x LL2
+						{:
+							Attr user = x.getAttr("usuario");
+							Attr pass = x.getAttr("password");
+
+							// parsear con el parse de archivos
+							// y si existe iniciar session....
+
+						:}
+						;
+// CUENTA
+cuenta 				::= ST_CUENTA LL1 cuenta_body:x LL2
+						{:
+							Attr user = x.getAttr("usuario");
+							Attr pass = x.getAttr("password");
+
+							// parsear con el parse de archivos
+							// y if: existe error else: crear cuenta
+						:}
+						;
+cuenta_body 		::= cuenta_stmt_list:x {:RESULT = x;:}
 						;
 
-body_struct 		::= list_stmt_struct
-						|//null value
+cuenta_stmt_list	::=	cuenta_stmt_list:l cuenta_stmt:x
+						{:
+							Boolean usuario = x.getString("usuario");
+							Boolean password = x.getString("password");
+
+							if(usuario != null and usuario){
+								l.set("usuario",x);
+							}
+							if(password != null and password){
+								l.set("password",x);
+							}
+							
+							RESULT = l;
+						:}
+						|cuenta_stmt:x
+						{:
+							RESULT = x;
+						:}
 						;
 
-list_stmt_struct	::=	list_stmt_struct stmt_struct
-						|stmt_struct
+cuenta_stmt 		::=	usuario:x 	{:RESULT = x;:}
+						|password:x	{:RESULT = x;:}
 						;
-
-stmt_struct 		::=	struct
-						|ANY			//el valor que lleva
+usuario 			::= ST_USUARIO LL1 id:x LL2
+						{:
+							s.set("usuario",true);
+							s.set("val",x);
+							RESULT = x;
+						:}
 						;
+password 			::= ST_PASSWORD LL1 id:x LL2
+						{:
+							s.set("password",true);
+							s.set("val",x);
+							RESULT = x;
+						:}
+						;
+// MENSAJE
+mensaje 			::= ST_MENSAJE LL1 mensaje_body:x LL2
+						;
+mensaje_body 		::= mensaje_stmt_list
+						;
+mensaje_stmt_list 	::= mensaje_stmt_list mensaje_stmt
+						|mensaje_stmt
+						;
+mensaje_stmt 		::= emisor
+						|receptor
+						|ST_MENSAJE LL1 LL2
+						;
+emisor 				::= ST_EMISOR LL1 ID LL2
+						;
+receptor 			::= ST_RECEPTOR LL1 st_receptor_body LL2
+						;
+st_receptor_body 		::= st_receptor_stmt_list
+						;
+st_receptor_stmt_list 	::= st_receptor_stmt_list st_receptor_stmt
+							|st_receptor_stmt
+							;
+st_receptor_stmt 		::= ST_CUENTA ID
+							;
 // *********************************************************************************
 // Búsqueda - Procesa operaciones de búsqueda unicamente.
 // *********************************************************************************
-busqueda 			::=	body_busqueda
+busqueda 			::=	busqueda_body
 						;
-body_busqueda 		::= list_stmt_busqueda
+busqueda_body 		::= busqueda_stmt_list
 						;
-list_stmt_busqueda 	::= list_stmt_busqueda stmt_busqueda
-						|stmt_busqueda
+busqueda_stmt_list 	::= busqueda_stmt_list busqueda_stmt
+						|busqueda_stmt
 						;
-stmt_busqueda 		::= BUSCAR expr PCOMA
+busqueda_stmt 		::= BUSCAR expr PCOMA
 						;
 expr 				::= expr OR expr1
 						|expr1
@@ -123,5 +199,17 @@ list_stmt_string 	::= list_stmt_string stmt_string
 stmt_string 		::= NUMERAL
 						|PERCENT
 						|CLOSEQ
-						|ANY
+						;
+
+
+
+
+id 					::=	ID:x
+						{:
+                            Attr a = new Attr();
+                            a.set("val",x);
+                            a.set("id",true);
+                            a.set("info",CUP$Parser$stack.peek());
+                            RESULT = a;
+						:}
 						;
