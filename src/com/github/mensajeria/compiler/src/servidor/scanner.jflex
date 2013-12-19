@@ -1,6 +1,6 @@
 package com.github.mensajeria.compiler.servidor;
 
-import com.github.mensajeria.compiler.lib.CompilerError;
+import com.github.mensajeria.compiler.Err;
 import java_cup.runtime.Symbol;
 import java.util.LinkedList;
 import java.lang.StringBuilder;
@@ -16,11 +16,11 @@ import java.lang.StringBuilder;
 
 %{
     /** Errores **/
-    public LinkedList<CompilerError> errores=new LinkedList<>();
+    public LinkedList<Err> errores=new LinkedList<>();
     private void error(String message) {
             
         Symbol sym=new Symbol(Sym.error, yyline, yycolumn, yytext());
-        CompilerError e=new CompilerError(message,sym,CompilerError.Type.LEXIC);
+        Err e=new Err(message,sym,Err.Type.LEXIC);
         errores.add(e);
     }
     /** String **/
@@ -42,10 +42,6 @@ DIGIT           =        [0-9]
 INT             =        "-"?{DIGIT}+
 ID              =        [:jletter:] [:jletterdigit:]*
 BOOLEAN         =        "true"|"false"
-ANY             =        [^\n\r\t ]
-
-SIMPLE_COMMENT  =        "//"[^\*\n\r]*{NEWLINE}
-
 
 %%
 
@@ -54,9 +50,6 @@ SIMPLE_COMMENT  =        "//"[^\*\n\r]*{NEWLINE}
 <YYINITIAL>
 {
     {SPACE}             {}
-
-
-
 
     "buscar"           {return symbol(Sym.BUSCAR);}
     "remitente"        {return symbol(Sym.REMITENTE);}
@@ -67,14 +60,14 @@ SIMPLE_COMMENT  =        "//"[^\*\n\r]*{NEWLINE}
     "?"                {return symbol(Sym.CLOSEQ);}
     "#"                {return symbol(Sym.NUMERAL);}
 
+    "(login)"           {return symbol(Sym.LOGIN);}
+    "(cuenta)"          {return symbol(Sym.CUENTA);}
+    "(usuario)"         {return symbol(Sym.USUARIO);}
+    "(password)"        {return symbol(Sym.PASSWORD);}
     
     "OR"                {return symbol(Sym.OR);}
     "AND"               {return symbol(Sym.AND);}
 
-
-    
-    "("                 {return symbol(Sym.LP);}
-    ")"                 {return symbol(Sym.RP);}
     "{"                 {return symbol(Sym.LL1);}
     "}"                 {return symbol(Sym.LL2);}
 
@@ -84,10 +77,7 @@ SIMPLE_COMMENT  =        "//"[^\*\n\r]*{NEWLINE}
 
     
     {ID}                {return symbol(Sym.ID);}
-    {ANY}               {return symbol(Sym.ANY);}
-        
 }
-
 
 
 .|\n        {error("Illegal character.");}
