@@ -1,7 +1,7 @@
 package com.github.mensajeria.compiler.servidor;
 
-import com.github.mensajeria.compiler.lib.Attr;
-import com.github.mensajeria.compiler.lib.CompilerError;
+import com.github.mensajeria.compiler.Attr;
+import com.github.mensajeria.compiler.Err;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
@@ -20,11 +20,14 @@ import java.awt.Point;
 parser code {: 
         
         
-        public LinkedList<CompilerError> errores=new LinkedList<>();
+        public LinkedList<Err> errores = new LinkedList<>();
+        public HashMap<Object,SFile.Contactos> contactos = new HashMap<>();
+        public HashMap<Object,SFile.Cuenta> cuenta = new HashMap<>();
+        public ArrayList<SFile.Mensaje> mensaje = new ArrayList<>();
         
         
         public void report_error(String message, Object info){
-                CompilerError e=new CompilerError(message,null,null);
+                Err e=new Err(message,null,null);
                 if(info instanceof java_cup.runtime.Symbol){
                         e.setSym((java_cup.runtime.Symbol)info);
                 }
@@ -37,6 +40,37 @@ parser code {:
 :};
 
 action code{:
+
+
+	void addCuenta(String cuenta,String password){
+		Object key = SFile.getKey(SFile.TIPO.CUENTA,cuenta);
+		SFile.Cuenta scuenta = new SFile.Cuenta(cuenta,password);
+		parser.cuenta.put(key,scuenta);
+	}
+	void addMensaje(String mensaje,String emisor,String ... receptores){
+		//String key = SFile.getKey(SFile.TIPO.MENSAJE,nombre).toString();
+		SFile.Mensaje smensaje = new SFile.Mensaje(mensaje,emisor,receptores);
+		parser.mensaje.add(smensaje);
+	}
+	void addContactos(String cuenta,String ... contactos){
+		Object key = SFile.getKey(SFile.TIPO.CONTACTOS,cuenta);
+		SFile.Contactos scontactos = new SFile.Contactos(cuenta,contactos);
+		parser.contactos.put(key,scontactos);
+	}
+
+	boolean existe_cuenta(SFile.TIPO tipo,String cuenta){
+		Object key = SFile.getKey(tipo,cuenta);
+
+		switch(tipo){
+			case CUENTA:	return parser.cuenta.containsKey(key);
+			case CONTACTOS:	return parser.contactos.containsKey(key);
+			default:		return false;
+		}
+	}
+
+	void report_error(String message,Object info){
+		parser.report_error(message,info);
+	}
 :}
    
 //===============================================================================================//
@@ -48,7 +82,7 @@ non terminal    Attr        input,stmt_list,stmt,account,message,contacts,accoun
 							message_stmt_list,message_stmt,contacts_stmt_list,account_body,contacts_body,
 							message_body,contacts_stmt,account_name,account_pass,message_sender,
 							message_receiver,message_content,message_date,fecha,hora,contacts_account,
-							contacts_contact,begin
+							contacts_contact,begin,id
 							;
 //===============================================================================================//
 //===============================================================================================//
@@ -71,21 +105,66 @@ stmt        ::= account
 // Account - Procesa información de la cuenta
 // *********************************************************************************             
 
-account 			::= CUENTA LP account_body RP
+account 			::= CUENTA LP account_body:x RP
+						{:
+							String cuenta = x.getString("cuenta");
+							String password = x.getString("password");
+
+
+							if(password == null){
+								report_error("La contraseña es obligatoria.",null);
+							} else {
+								if(cuenta == null){
+									report_error("El nombre de la cuenta es obligatoria.",null);
+								} else {
+									if(existe_cuenta(SFile.TIPO.CUENTA,cuenta)){
+										report_error("Ya exite una cuenta llamada '" + cuenta + "'.",null);
+									} else {
+										addCuenta(cuenta,password);
+									}
+								}
+							}
+
+							RESULT = x;
+						:}
 						;
 
-account_body		::=	account_stmt_list
+account_body		::=	account_stmt_list:x	{:RESULT = x;:}
 						;
 
-account_stmt_list 	::= account_stmt_list account_stmt
-						|account_stmt
+account_stmt_list 	::= account_stmt_list:l account_stmt:x
+						{:
+							Object cuenta = x.get("cuenta");
+							Object password = x.get("password");
+
+							l.set("cuenta",(cuenta == null) ? l.get("cuenta") : x.get("cuenta"));
+							l.set("password",(password == null) ? l.get("password") : x.get("password"));
+
+							RESULT = l;
+						:}
+						|account_stmt:x
+						{:RESULT = x;:}
 						;
-account_stmt 		::= account_name
-						|account_pass
+account_stmt 		::= account_name:x		{:RESULT = x;:}
+						|account_pass:x 	{:RESULT = x;:}
 						;
-account_name 		::= USUARIO EQUAL ID PCOMA
+account_name 		::= USUARIO EQUAL ID:x PCOMA
+						{:
+							Attr a = new Attr();
+
+							a.set("cuenta",x);
+
+							RESULT = a;
+						:}
 						;
-account_pass 		::= PASSWORD EQUAL ANY PCOMA
+account_pass 		::= PASSWORD EQUAL ID:x PCOMA
+						{:
+							Attr a = new Attr();
+
+							a.set("password",x);
+
+							RESULT = a;
+						:}
 						;
 // *********************************************************************************
 // Message - Procesa información de un mensaje
@@ -113,22 +192,79 @@ message_content 	::= CONTENIDO LP ANY RP
 fecha 				::= INT DIAGONAL INT DIAGONAL INT
 						;
 hora 				::= INT DPUNTO INT DPUNTO INT
+						{:
+						:}
 						;
 // *********************************************************************************
 // Contacto - Procesa informaciónd e un contacto
 // ********************************************************************************* 
 
-contacts 			::= CONTACTOS LP contacts_body RP
+contacts 			::= CONTACTOS LP contacts_body:x RP
+						{:
+							Attr a = new Attr();
+							Attr cuenta = x.getAttr("cuenta");
+							ArrayList<Attr> list = x.getList("list");
+
+							if(cuenta == null){
+								report_error("El nombre de la cuenta es obligatoria",null);
+							} else {
+								String nombre_cuenta = cuenta.getString("val");
+								if(existe_cuenta(SFile.TIPO.CONTACTOS,nombre_cuenta)){
+									report_error("Ya existe una lista de contactos para esa cuenta.",null);
+								} else {
+									ArrayList<String> contactos = new ArrayList<>();
+									for(Attr ac : list){
+										contactos.add(ac.getString("val"));
+									}
+									addContactos(nombre_cuenta,contactos);
+								}
+							}
+
+							RESULT = a;
+						:}
 						;
-contacts_body		::= contacts_stmt_list
+contacts_body		::= contacts_stmt_list:x	{:RESULT = x;:}
 						;
-contacts_stmt_list 	::= contacts_stmt_list contacts_stmt
-						|contacts_stmt
+contacts_stmt_list 	::= contacts_stmt_list:l contacts_stmt:x
+						{: 
+							Object cuenta = x.get("cuenta");
+							l.set("cuenta",(cuenta == null ? l.get("cuenta") : cuenta));
+							l.getList("list").add(x);
+							RESULT = l;
+						:}
+						|contacts_stmt:x
+						{:
+							Attr a = new Attr();
+							ArrayList<Attr> list = new ArrayList<>();
+							list.add(x);
+							a.set("cuenta",x.get("cuenta"));
+							a.set("list",list);
+							RESULT = a;
+						:}
 						;
-contacts_stmt 		::= contacts_account
-						|contacts_contact
+contacts_stmt 		::= contacts_account:x		{:RESULT = x;:}
+						|contacts_contact:x 	{:RESULT = x;:}
 						;
-contacts_account 	::= CUENTA ID
+contacts_account 	::= CUENTA id:x
+						{:
+							Attr a = new Attr();
+							a.set("cuenta",x);
+							RESULT = a;
+						:}
 						;
-contacts_contact 	::= CONTACTO ID
+contacts_contact 	::= CONTACTO id:x
+						{:
+							Attr a = new Attr();
+							a.set("contacto",x);
+							RESULT = a;
+						:}
+						;
+id 					::=	ID:x
+						{:
+                            Attr a = new Attr();
+                            a.set("val",x);
+                            a.set("id",true);
+                            a.set("info",CUP$Parser_file$stack.peek());
+                            RESULT = a;
+						:}
 						;

@@ -252,7 +252,7 @@ public class Attr extends HashMap<String, Object> {
             return null;
         }
     }
-    public Attr getMyClass(String nombre) {
+    public Attr getAttr(String nombre) {
         try {
             return ((Attr) get(nombre));
         } catch (Exception exc) {

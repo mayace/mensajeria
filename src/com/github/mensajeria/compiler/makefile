@@ -13,13 +13,18 @@ servidor: $(srcdir)/servidor/scanner.jflex $(srcdir)/servidor/parser.cup
 	mv Parser.java  ./servidor
 	mv $(srcdir)/servidor/Scanner.java ./servidor
 
-servidorf: $(srcdir)/servidor/scanner_file.jflex $(srcdir)/servidor/parser_file.cup
-	java -jar $(jflexlib) $(srcdir)/servidor/scanner_file.jflex
+
+servidorf_cup: $(srcdir)/servidor/parser_file.cup
 	java -jar $(cuplib) -parser Parser_file -symbols Sym_file $(srcdir)/servidor/parser_file.cup
 	mv Sym_file.java ./servidor
 	mv Parser_file.java  ./servidor
+
+servidorf_jflex: $(srcdir)/servidor/scanner_file.jflex 
+	java -jar $(jflexlib) $(srcdir)/servidor/scanner_file.jflex
 	mv $(srcdir)/servidor/Scanner_file.java ./servidor
 
+servidorf: servidorf_cup servidorf_jflex
+	echo "servidor_file compiled..."
 
 proem_cup: $(srcdir)/proem/parser.cup
 	java -jar $(cuplib) -parser Parser -symbols Sym $(srcdir)/proem/parser.cup

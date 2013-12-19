@@ -72,11 +72,12 @@ action code{:
 terminal        String 		KW_INT,KW_STRING,KW_BOOLEAN,KW_QUEUE,KW_LIST,INT,STRING,BOOLEAN,ID,
 							EQUAL,COMA,PCOMA,OR,AND,NOT,DEQUAL,NEQUAL,BTHAN,LTHAN,BETHAN,LETHAN,
 							LP,RP,MINUS,PLUS,MULTI,DIV,NERROR,WHILE,WAIT,FOR,TO,IF,ELSE,SEND,IS,
-                            PUNTO,LL1,LL2
+                            PUNTO,LL1,LL2,PRINTLN
 							;
 non terminal    Attr        begin,input,stmt_list,stmt,declaracion,asignacion,control,id_list,
                             esperar,enviar,tipo,expr,expr1,expr2,expr3,expr4,expr5,
-                            id,string,int,boolean,params,expr_list,while,for,if,elseif
+                            id,string,int,boolean,params,expr_list,while,for,if,elseif,
+                            expr_list_p,control_body
 							;
 /****************************************************************************************/
 begin       ::= input   {:System.out.println("Compiled...");:}
@@ -85,17 +86,33 @@ begin       ::= input   {:System.out.println("Compiled...");:}
 // *********************************************************************************
 // Input - Contenido de la entrada
 // *********************************************************************************
-input       ::=	stmt_list
+input       ::=	stmt_list:x {:RESULT = x;:}
                 ;
 
-stmt_list   ::= stmt_list stmt
-                |stmt
+stmt_list   ::= stmt_list:l stmt:x
+                {:
+                    l.set("nodo",new Nodo(Nodo.OPERACION.STMT,l.getNodo("nodo"),x.getNodo("nodo")));
+                    RESULT = l;
+                :}
+                |stmt:x
+                {:
+                    Attr a = new Attr();
+                    a.set("nodo",new Nodo(Nodo.OPERACION.STMT,x.getNodo("nodo"),null));
+                    RESULT = a;
+                :}
                 ;
-stmt        ::= declaracion:x            
-                |asignacion:x
-                |esperar:x
-                |enviar:x
-                |control:x
+stmt        ::= declaracion:x   {:RESULT = x;:}
+                |asignacion:x   {:RESULT = x;:}
+                |esperar:x      {:RESULT = x;:}
+                |enviar:x       {:RESULT = x;:}
+                |control:x      {:RESULT = x;:}
+                |PRINTLN expr:e       
+                {:
+                    Attr a = new Attr();
+                    a.set("nodo",new Nodo(Nodo.OPERACION.PRINTLN,e.getNodo("nodo"),null));
+
+                    RESULT = a;
+                :}
                 ;
 declaracion ::= id_list:l IS tipo:t PCOMA
                 {:
@@ -116,20 +133,48 @@ declaracion ::= id_list:l IS tipo:t PCOMA
 
                 :}
                 ;
-asignacion  ::= expr EQUAL id_list PCOMA
+asignacion  ::= expr:e EQUAL id_list:l PCOMA
+                {:
+                    
+                    
+                    Nodo nodo = new Nodo(Nodo.OPERACION.ASIGNACION,e.getNodo("nodo"),null);
+
+                    e.set("list",l.getList("list"));
+                    e.set("nodo",nodo);
+                    RESULT = e;
+                :}
                 |expr_list:e LP params:p RP EQUAL id_list:l PCOMA
                 {:
                     Integer count = e.getInteger("count");
                     if(count == 1){
                         
-                        e.set("params",p);
+                        e.set("params",p.getList("list"));
+                        e.set("list",l.get("list"));
 
-                    }
+                        Nodo left = new Nodo(e,false);
+                        Nodo nodo = new Nodo(Nodo.OPERACION.ASIGNACION,left,null);
+
+                        e.set("nodo",nodo);
+                    }   
                 :}
                 ;
-esperar     ::= WAIT LP expr_list RP PCOMA
+esperar     ::= WAIT LP expr:e RP PCOMA
+                {:
+                    Attr a = new Attr();
+                    Nodo nodo = new Nodo(Nodo.OPERACION.ESPERAR,e.getNodo("nodo"),null);
+
+                    a.set("nodo",nodo);
+                    RESULT = a;
+                :}
                 ;
-enviar      ::= SEND LP expr_list RP PCOMA
+enviar      ::= SEND LP expr:e RP PCOMA
+                {:
+                    Attr a = new Attr();
+                    Nodo nodo = new Nodo(Nodo.OPERACION.ENVIAR,e.getNodo("nodo"),null);
+
+                    a.set("nodo",nodo);
+                    RESULT = a;
+                :}
                 ;
 
 id_list         ::= id_list:x COMA id:x1    
@@ -299,7 +344,7 @@ id              ::= ID:x        {:
                                 :}
                     ;
 
-params          ::= expr_list:x     {:RESULT = x;:}
+params          ::= expr_list_p:x     {:RESULT = x;:}
                     |               {:RESULT = new Attr();:}
                     ;
                 // solo puede ser (cola | lista).funcion
@@ -339,16 +384,56 @@ expr_list       ::= //expr_list COMA expr
                         RESULT = a;
                     :}
                     ;
-control         ::= while
-                    |for
-                    |if
+expr_list_p     ::= expr_list_p:l COMA expr:x
+                    {:
+                        l.getList("list").add(x);
+                        RESULT = l;
+                    :}
+                    |expr:x
+                    {:
+                        Attr a = new Attr();
+                        ArrayList<Attr> l = new ArrayList<>();
+                        a.set("list",x);
+                        RESULT = a;
+                    :}
                     ;
-while           ::= WHILE LP expr RP LL1 input LL2
+control         ::= while:x   {:RESULT = x;:}
+                    |for:x    {:RESULT = x;:}
+                    |if:x     {:RESULT = x;:}
                     ;
-for             ::= FOR LP id TO expr RP LL1 input LL2
+while           ::= WHILE LP expr:e RP LL1 control_body:x LL2
+                    {:
+                        Attr a = new Attr();
+                        Nodo nodo = new Nodo(Nodo.OPERACION.WHILE,e.getNodo("nodo"),x.getNodo("nodo"));
+
+                        a.set("nodo",nodo);
+                        RESULT = a;
+                    :}
                     ;
-if              ::= IF LP expr RP LL1 input LL2 elseif
+for             ::= FOR LP id:id TO expr:e RP LL1 control_body:x LL2
+                    {:
+                        Attr a = new Attr();
+                        Nodo nodo = new Nodo(Nodo.OPERACION.FOR,e.getNodo("nodo"),x.getNodo("nodo"));
+
+                        e.set("id",id);
+                        a.set("nodo",nodo);
+                        RESULT = a;
+                    :}
                     ;
-elseif          ::= ELSE LL1 input LL2
-                    |
+if              ::= IF LP expr:e RP LL1 control_body:x LL2 elseif:x1
+                    {:
+                        Attr a = new Attr();
+                        Nodo nodo = new Nodo(Nodo.OPERACION.IF,e.getNodo("nodo"),x.getNodo("nodo"));
+
+                        a.set("nodo",nodo);
+                        a.set("else",e.getNodo("nodo"));
+                        RESULT = a;
+                    :}
+                    ;
+elseif          ::= ELSE LL1 control_body:x LL2 {:RESULT = new Attr();:}
+                    |{:RESULT = new Attr();:}
+                    ;
+
+control_body    ::= input:x {:RESULT = x;:}
+                    |       {:RESULT = new Attr();:}
                     ;

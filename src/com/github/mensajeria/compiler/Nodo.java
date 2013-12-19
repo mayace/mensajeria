@@ -1,5 +1,6 @@
 package com.github.mensajeria.compiler;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 
@@ -13,10 +14,6 @@ public class Nodo {
     ;
     private boolean leaf = false;
     private boolean id = false;
-
-    private Object pila = null;
-    private Object simTable = null;
-    private Object errs = null;
 
     /**
      * string Crea como nodo
@@ -52,11 +49,8 @@ public class Nodo {
      */
     public void exec(Object pila, Object simTable, Object errs) {
         // pre 
-        setPila(pila);
-        setSimTable(simTable);
-        setErrs(errs);
-        execNode(getLeft());
-        execNode(getRight());
+        execNode(getLeft(), pila, simTable, errs);
+        execNode(getRight(), pila, simTable, errs);
 
         switch (getOperation()) {
             case RESTA:
@@ -73,7 +67,7 @@ public class Nodo {
                 break;
             default:
                 if (isLeaf()) {
-                    execLeaf();
+                    execLeaf(pila, simTable, errs);
                 } else {
                     throw new AssertionError(getOperation().name());
                 }
@@ -81,18 +75,18 @@ public class Nodo {
         // post
     }
 
-    private void execNode(Nodo nodo) {
+    private void execNode(Nodo nodo, Object pila, Object simTable, Object errs) {
         if (nodo != null) {
-            nodo.exec(getPila(), getSimTable(), getErrs());
+            nodo.exec(pila, simTable, errs);
         }
     }
 
-    private void execLeaf() {
+    private void execLeaf(Object pila, Object simTable, Object errs) {
         Object v = null;
         Object objr = getRef();
-        Object objp = getPila();
-        Object objt = getSimTable();
-        Object obje = getErrs();
+        Object objp = pila;
+        Object objt = simTable;
+        Object obje = errs;
         if (isId()) {
             // pila
             if (objp instanceof Object[]) {
@@ -106,6 +100,7 @@ public class Nodo {
                         // ref
                         if (objr instanceof Attr) {
                             Attr a = (Attr) objr;
+
                             String name = a.getString("val");
 
                             if (map.containsKey(name)) {
@@ -161,35 +156,12 @@ public class Nodo {
 //<editor-fold defaultstate="collapsed" desc="CONSTANTES">
     public static enum OPERACION {
 
-        RESTA, SUMA, MULTIPLICACION, DIVISION, LTHAN, BTHAN, NEQUAL, DEQUAL, LETHAN, BETHAN, OR, AND
+        RESTA, SUMA, MULTIPLICACION, DIVISION, LTHAN, BTHAN, NEQUAL, DEQUAL, LETHAN, BETHAN, OR, AND,
+        STMT,IF,WHILE,FOR,ASIGNACION,ESPERAR,ENVIAR,PRINTLN
     }
 //</editor-fold>
 
 //<editor-fold defaultstate="collapsed" desc="getter and setter">
-    public void setErrs(Object errs) {
-        this.errs = errs;
-    }
-
-    public Object getErrs() {
-        return errs;
-    }
-
-    public Object getSimTable() {
-        return simTable;
-    }
-
-    public void setSimTable(Object simTable) {
-        this.simTable = simTable;
-    }
-
-    public Object getPila() {
-        return pila;
-    }
-
-    public void setPila(Object pila) {
-        this.pila = pila;
-    }
-
     public Object getRef() {
         return ref;
     }
