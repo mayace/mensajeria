@@ -76,13 +76,14 @@ action code{:
 //===============================================================================================//
 //===============================================================================================//
 terminal        String 		LP,RP,ID,CUENTA,USUARIO,EQUAL,ANY,PCOMA,EMISOR,MENSAJE,RECEPTOR,
-							PASSWORD,FECHA,CONTENIDO,INT,DIAGONAL,DPUNTO,CONTACTO,NERROR,CONTACTOS
+							PASSWORD,FECHA,CONTENIDO,INT,DIAGONAL,DPUNTO,CONTACTO,NERROR,CONTACTOS,
+							FECHA_HORA
 							;
 non terminal    Attr        input,stmt_list,stmt,account,message,contacts,account_stmt_list,account_stmt,
 							message_stmt_list,message_stmt,contacts_stmt_list,account_body,contacts_body,
 							message_body,contacts_stmt,account_name,account_pass,message_sender,
 							message_receiver,message_content,message_date,fecha,hora,contacts_account,
-							contacts_contact,begin,id
+							contacts_contact,begin,id,fecha_hora
 							;
 //===============================================================================================//
 //===============================================================================================//
@@ -169,30 +170,117 @@ account_pass 		::= PASSWORD EQUAL ID:x PCOMA
 // *********************************************************************************
 // Message - Procesa información de un mensaje
 // *********************************************************************************             
-message 			::=	MENSAJE LP message_body RP
-						;
-message_body		::= message_stmt_list
-						;
-message_stmt_list 	::= message_stmt_list message_stmt
-						|message_stmt
-						;
-message_stmt 		::= message_sender
-						|message_receiver
-						|message_date
-						|message_content
-						;
-message_sender 		::= EMISOR EQUAL ID PCOMA
-						;
-message_receiver 	::= RECEPTOR EQUAL ID PCOMA
-						;
-message_date 		::= FECHA EQUAL fecha hora PCOMA
-						;
-message_content 	::= CONTENIDO LP ANY RP
-						;
-fecha 				::= INT DIAGONAL INT DIAGONAL INT
-						;
-hora 				::= INT DPUNTO INT DPUNTO INT
+message 			::=	MENSAJE LP message_body:x RP
 						{:
+							Attr emisor = x.getAttr("emisor");
+							ArrayList<Attr> list = x.getList("list");
+							Attr contenido = x.getAttr("contenido");
+
+							if (emisor == null){
+								report_error("Emisor es obligatorio.",null);
+							} else {
+								if(contenido != null){
+									if(!list.isEmpty()){
+										ArrayList<String> receptores = new ArrayList<>();
+										for(Attr a : list){
+											receptores.add(a.getString("val"));
+										}
+										addMensaje(contenido.getString("val"),emisor.getString("val"),receptores.toArray(new String[0]));
+									}	
+								}
+							}
+
+							RESULT = x;
+						:}
+						;
+message_body		::= message_stmt_list:x	{:RESULT = x;:}
+						;
+message_stmt_list 	::= message_stmt_list:l message_stmt:x
+						{:
+							Attr emisor = x.getAttr("emisor");
+							Attr receptor = x.getAttr("receptor");
+							Attr contenido = x.getAttr("contenido");
+
+
+							if(emisor != null){
+								l.set("emisor",emisor);
+							}
+							if (receptor != null){
+								l.getList("list").add(receptor);
+							}
+							if (contenido != null){
+								l.set("contenido",contenido);
+							}
+							RESULT = l;
+						:}
+						|message_stmt:x
+						{:
+							Attr a = new Attr();
+							Attr emisor = x.getAttr("emisor");
+							Attr receptor = x.getAttr("receptor");
+							Attr contenido = x.getAttr("contenido");
+							ArrayList<Attr> list = new ArrayList<>();
+
+
+							if(emisor != null){
+								a.set("emisor",emisor);
+							}
+							if (receptor != null){
+								list.add(receptor);
+							}
+							if (contenido != null){
+								a.set("contenido",contenido);
+							}
+							a.set("list",list);
+
+
+							RESULT = a;
+						:}
+						;
+message_stmt 		::= message_sender:x 	{:RESULT = x;:}
+						|message_receiver:x {:RESULT = x;:}
+						|message_date:x		{:RESULT = x;:}
+						|message_content:x	{:RESULT = x;:}
+						;
+message_sender 		::= EMISOR EQUAL id:x PCOMA
+						{:
+							Attr a = new Attr();
+
+							a.set("emisor",x);
+							RESULT = a;
+						:}
+						;
+message_receiver 	::= RECEPTOR EQUAL id:x PCOMA
+						{:
+							Attr a = new Attr();
+
+							a.set("receptor",x);
+							RESULT = a;
+						:}
+						;
+message_date 		::= FECHA EQUAL fecha_hora:x PCOMA
+						{:
+							Attr a = new Attr();
+
+							a.set("fecha_hora",x);
+							RESULT = a;
+						:}
+						;
+message_content 	::= CONTENIDO:x
+						{:
+                            Attr a = new Attr();
+                            a.set("val",x);
+                            a.set("info",CUP$Parser_file$stack.peek());
+                            RESULT = a;
+						:}
+						;
+
+fecha_hora 			::= FECHA_HORA:x
+						{:
+                            Attr a = new Attr();
+                            a.set("val",x);
+                            a.set("info",CUP$Parser_file$stack.peek());
+                            RESULT = a;
 						:}
 						;
 // *********************************************************************************
@@ -216,7 +304,7 @@ contacts 			::= CONTACTOS LP contacts_body:x RP
 									for(Attr ac : list){
 										contactos.add(ac.getString("val"));
 									}
-									addContactos(nombre_cuenta,contactos);
+									addContactos(nombre_cuenta,contactos.toArray(new String[0]));
 								}
 							}
 

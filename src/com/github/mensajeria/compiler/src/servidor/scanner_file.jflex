@@ -1,7 +1,7 @@
 
 package com.github.mensajeria.compiler.servidor;
 
-import com.github.mensajeria.compiler.lib.CompilerError;
+import com.github.mensajeria.compiler.Err;
 import java_cup.runtime.Symbol;
 import java.util.LinkedList;
 import java.lang.StringBuilder;
@@ -13,15 +13,15 @@ import java.lang.StringBuilder;
 %cup
 %line
 %column
-%state STRING COMMENT
+%state STRING COMMENT YYCONTENIDO
 
 %{
     /** Errores **/
-    public LinkedList<CompilerError> errores=new LinkedList<>();
+    public LinkedList<Err> errores=new LinkedList<>();
     private void error(String message) {
             
         Symbol sym=new Symbol(Sym_file.error, yyline, yycolumn, yytext());
-        CompilerError e=new CompilerError(message,sym,CompilerError.Type.LEXIC);
+        Err e=new Err(message,sym,Err.TIPO.LEXICO);
         errores.add(e);
     }
     /** String **/
@@ -57,9 +57,11 @@ DIGIT           =        [0-9]
 INT             =        "-"?{DIGIT}+
 ID              =        [:jletter:] [:jletterdigit:]*
 BOOLEAN         =        "true"|"false"
+FECHA           =       {DIGIT}{DIGIT}"/"{DIGIT}{DIGIT}"/"{DIGIT}{DIGIT}{DIGIT}{DIGIT}
+HORA            =       {DIGIT}{DIGIT}":"{DIGIT}{DIGIT}":"{DIGIT}{DIGIT} 
+FECHA_HORA      =        {FECHA} {HORA}
 ANY             =        [^\n\r\t ]
 
-SIMPLE_COMMENT  =        "//"[^\*\n\r]*{NEWLINE}
 
 
 %%
@@ -70,9 +72,6 @@ SIMPLE_COMMENT  =        "//"[^\*\n\r]*{NEWLINE}
 {
     {SPACE}             {}
 
-
-
-
     "<contactos>"       {return symbol(Sym_file.CONTACTOS);}
     "<cuenta>"          {return symbol(Sym_file.CUENTA);}
     "<usuario>"         {return symbol(Sym_file.USUARIO);}
@@ -81,27 +80,36 @@ SIMPLE_COMMENT  =        "//"[^\*\n\r]*{NEWLINE}
     "<receptor>"        {return symbol(Sym_file.RECEPTOR);}
     "<password>"        {return symbol(Sym_file.PASSWORD);}
     "<fecha>"           {return symbol(Sym_file.FECHA);}
-    "<contenido>"       {return symbol(Sym_file.CONTENIDO);}
+    "<contenido>("      {string.setLength(0);yybegin(YYCONTENIDO);}
     
-
-
-
     
     "("                 {return symbol(Sym_file.LP);}
     ")"                 {return symbol(Sym_file.RP);}
 
     "="                 {return symbol(Sym_file.EQUAL);}
     ";"                 {return symbol(Sym_file.PCOMA);}
-    ":"                 {return symbol(Sym_file.DPUNTO);}
-    "/"                 {return symbol(Sym_file.DIAGONAL);}
 
-    
+
+    {FECHA_HORA}        {return symbol(Sym_file.FECHA_HORA);}    
     {INT}               {return symbol(Sym_file.INT);}
     {ID}                {return symbol(Sym_file.ID);}
-    {ANY}               {return symbol(Sym_file.ANY);}
         
 }
 
+<YYCONTENIDO>
+{
+    ")"             { 
+                        yybegin(YYINITIAL); 
+                        return symbol(Sym_file.CONTENIDO,string.toString()); 
+                    }
+  [^\n\r\"\\]+      { string.append( yytext() ); }
+  \\t               { string.append('\t'); }
+  \\n               { string.append('\n'); }
+
+  \\r               { string.append('\r'); }
+  \\\"              { string.append('\"'); }
+  \\                { string.append('\\'); }
+}
 
 
 .|\n        {error("Illegal character.");}

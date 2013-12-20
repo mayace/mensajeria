@@ -4,6 +4,7 @@ package com.github.mensajeria.compiler.servidor;
 import com.github.mensajeria.compiler.Attr;
 import com.github.mensajeria.compiler.Err;
 
+import java.nio.file.Paths;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
@@ -23,6 +24,9 @@ parser code {:
         
         
         public LinkedList<Err> errores=new LinkedList<>();
+        public SFile cuentas = new SFile(Paths.get("CUENTAS.ROY"),SFile.TIPO.CUENTA);
+        public SFile contactos = new SFile(Paths.get("CONTACTOS.ROY"),SFile.TIPO.CONTACTOS);
+        public SFile mensajes = new SFile(Paths.get("MENSAJES.ROY"),SFile.TIPO.MENSAJE);
         
         
         public void report_error(String message, Object info){
@@ -38,13 +42,20 @@ parser code {:
         }
 :};
 
-action code{::}
+action code{:
+	void report_error(String msg,Object info){
+		parser.report_error(msg,info);
+	}
+	void report_fatal_error(String msg,Object info){
+		parser.report_fatal_error(msg,info);
+	}
+:}
    
 //===============================================================================================//
 //===============================================================================================//
 terminal        String 		LP,RP,ID,LL1,LL2,BUSCAR,PCOMA,AND,OR,EQUAL,FECHA,REMITENTE,
 							RECEPTOR,MENSAJE,CONTIENE,QUOTE,NUMERAL,PERCENT,CLOSEQ,ST_CUENTA,
-							ST_LOGIN,ST_MENSAJE,ST_USUARIO,ST_PASSWORD,ST_MENSAJE,ST_RECEPTOR
+							ST_LOGIN,ST_MENSAJE,ST_USUARIO,ST_PASSWORD,ST_RECEPTOR,ST_EMISOR
 							;
 non terminal    Attr        input,stmt_list,stmt,struct,busqueda,body_struct,list_stmt_struct,
 							stmt_struct,busqueda_body,busqueda_stmt_list,busqueda_stmt,begin,
@@ -85,7 +96,13 @@ login 				::= ST_LOGIN LL1 cuenta_body:x LL2
 
 							// parsear con el parse de archivos
 							// y si existe iniciar session....
+							SFile.Cuenta cuenta = (SFile.Cuenta)parser.cuentas.get(SFile.getKey(SFile.TIPO.CUENTA,user.getString("val")));
+							
+							if(cuenta == null){
+								report_fatal_error("No existe la cuenta...",x.get("info"));
+							} else {
 
+							}
 						:}
 						;
 // CUENTA
@@ -103,13 +120,13 @@ cuenta_body 		::= cuenta_stmt_list:x {:RESULT = x;:}
 
 cuenta_stmt_list	::=	cuenta_stmt_list:l cuenta_stmt:x
 						{:
-							Boolean usuario = x.getString("usuario");
-							Boolean password = x.getString("password");
+							Boolean usuario = x.getBoolean("usuario");
+							Boolean password = x.getBoolean("password");
 
-							if(usuario != null and usuario){
+							if(usuario != null && usuario){
 								l.set("usuario",x);
 							}
-							if(password != null and password){
+							if(password != null && password){
 								l.set("password",x);
 							}
 							
@@ -126,15 +143,13 @@ cuenta_stmt 		::=	usuario:x 	{:RESULT = x;:}
 						;
 usuario 			::= ST_USUARIO LL1 id:x LL2
 						{:
-							s.set("usuario",true);
-							s.set("val",x);
+							x.set("usuario",true);
 							RESULT = x;
 						:}
 						;
 password 			::= ST_PASSWORD LL1 id:x LL2
 						{:
-							s.set("password",true);
-							s.set("val",x);
+							x.set("password",true);
 							RESULT = x;
 						:}
 						;
@@ -200,21 +215,6 @@ stmt_string 		::= NUMERAL
 						|PERCENT
 						|CLOSEQ
 						;
-
-
-
-
-id 					::=	ID:x
-						{:
-                            Attr a = new Attr();
-                            a.set("val",x);
-                            a.set("id",true);
-                            a.set("info",CUP$Parser$stack.peek());
-                            RESULT = a;
-						:}
-						;
-
-
 
 
 id 					::=	ID:x

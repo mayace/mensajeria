@@ -20,7 +20,7 @@ import java.lang.StringBuilder;
     private void error(String message) {
             
         Symbol sym=new Symbol(Sym.error, yyline, yycolumn, yytext());
-        Err e=new Err(message,sym,Err.Type.LEXIC);
+        Err e=new Err(message,sym,Err.TIPO.LEXICO);
         errores.add(e);
     }
     /** String **/
@@ -60,20 +60,19 @@ BOOLEAN         =        "true"|"false"
     "?"                {return symbol(Sym.CLOSEQ);}
     "#"                {return symbol(Sym.NUMERAL);}
 
-    "(login)"           {return symbol(Sym.LOGIN);}
-    "(cuenta)"          {return symbol(Sym.CUENTA);}
-    "(usuario)"         {return symbol(Sym.USUARIO);}
-    "(password)"        {return symbol(Sym.PASSWORD);}
+    "(login)"           {return symbol(Sym.ST_LOGIN);}
+    "(cuenta)"          {return symbol(Sym.ST_CUENTA);}
+    "(usuario)"         {return symbol(Sym.ST_USUARIO);}
+    "(password)"        {return symbol(Sym.ST_PASSWORD);}
     
-    "OR"                {return symbol(Sym.OR);}
-    "AND"               {return symbol(Sym.AND);}
+    "or"                {return symbol(Sym.OR);}
+    "and"               {return symbol(Sym.AND);}
 
     "{"                 {return symbol(Sym.LL1);}
     "}"                 {return symbol(Sym.LL2);}
 
     "="                 {return symbol(Sym.EQUAL);}
     ";"                 {return symbol(Sym.PCOMA);}
-    \"                  {return symbol(Sym.QUOTE);}
 
     
     {ID}                {return symbol(Sym.ID);}

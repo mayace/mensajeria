@@ -5,13 +5,17 @@ libdir 		= $(basedir)/lib
 cuplib 		= $(libdir)/java-cup-11a.jar
 jflexlib	= $(libdir)/JFlex.jar
 
-
-servidor: $(srcdir)/servidor/scanner.jflex $(srcdir)/servidor/parser.cup
-	java -jar $(jflexlib) $(srcdir)/servidor/scanner.jflex
+servidor_cup: $(srcdir)/servidor/parser.cup
 	java -jar $(cuplib) -parser Parser -symbols Sym $(srcdir)/servidor/parser.cup
 	mv Sym.java ./servidor
 	mv Parser.java  ./servidor
+
+servidor_jflex: $(srcdir)/servidor/scanner.jflex 
+	java -jar $(jflexlib) $(srcdir)/servidor/scanner.jflex
 	mv $(srcdir)/servidor/Scanner.java ./servidor
+
+servidor: servidor_cup servidor_jflex
+	echo "servidor compiled..."
 
 
 servidorf_cup: $(srcdir)/servidor/parser_file.cup

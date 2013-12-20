@@ -38,6 +38,25 @@ public class SFile {
         Object val = null;
         read();
 
+        switch (getTipo()) {
+            case CUENTA:
+                if (getData() instanceof HashMap) {
+                    HashMap map = (HashMap) getData();
+                    return map.get(key);
+                }
+                break;
+            case MENSAJE:
+                if (getData() instanceof HashMap) {
+                    HashMap map = (HashMap) getData();
+                    return map.get(key);
+                }
+                break;
+//            case CONTACTOS:
+//                break;
+            default:
+                throw new AssertionError(getTipo().name());
+        }
+
         return val;
     }
 
@@ -50,10 +69,13 @@ public class SFile {
 
         switch (getTipo()) {
             case CUENTA:
+                setData(p.cuenta);
                 break;
             case MENSAJE:
+                setData(p.mensaje);
                 break;
             case CONTACTOS:
+                setData(p.contactos);
                 break;
             default:
                 throw new AssertionError(getTipo().name());
@@ -66,13 +88,20 @@ public class SFile {
     }
 
 //<editor-fold defaultstate="collapsed" desc="getter and setter">
-
     public Path getFile() {
         return file;
     }
 
     public TIPO getTipo() {
         return tipo;
+    }
+
+    public void setData(Object data) {
+        this.data = data;
+    }
+
+    public Object getData() {
+        return data;
     }
 
 //</editor-fold>
