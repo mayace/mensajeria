@@ -26,6 +26,7 @@ public abstract class SClient implements Runnable {
     PrintWriter out = null;
 
     public SClient(Socket socket) {
+        System.err.println("created sclient...");
         this.socket = socket;
         this.qin = new LinkedList<>();
         this.qout = new LinkedList<>();
@@ -80,7 +81,10 @@ public abstract class SClient implements Runnable {
             while ((line = in.readLine()) != null) {
                 read(line);
             }
-            socket.close();
+            
+            
+            //socket.close();
+//            System.out.println("cerrado");
         } catch (IOException ex) {
             Logger.getLogger(SClient.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -114,7 +118,7 @@ public abstract class SClient implements Runnable {
      * @param input
      */
     public void read(Object input) {
-        System.out.println(Thread.currentThread().getName() + "says: " + input);
+//        System.out.println(Thread.currentThread().getName() + "says: " + input);
 
         final Queue<Object> qi = getQin();
         synchronized (qi) {

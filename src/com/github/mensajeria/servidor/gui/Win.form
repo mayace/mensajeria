@@ -153,10 +153,14 @@
                   <EmptySpace max="-2" attributes="0"/>
                   <Component id="lblPort" min="-2" max="-2" attributes="0"/>
                   <EmptySpace type="separate" max="-2" attributes="0"/>
-                  <Component id="txtPort" min="-2" max="-2" attributes="0"/>
-                  <EmptySpace type="unrelated" max="-2" attributes="0"/>
-                  <Component id="bttnOn" min="-2" max="-2" attributes="0"/>
-                  <EmptySpace pref="69" max="32767" attributes="0"/>
+                  <Group type="103" groupAlignment="0" attributes="0">
+                      <Group type="102" attributes="0">
+                          <Component id="bttnOn" min="-2" max="-2" attributes="0"/>
+                          <EmptySpace min="0" pref="155" max="32767" attributes="0"/>
+                      </Group>
+                      <Component id="txtPort" max="32767" attributes="0"/>
+                  </Group>
+                  <EmptySpace type="separate" max="-2" attributes="0"/>
                   <Component id="jScrollPane1" min="-2" pref="185" max="-2" attributes="0"/>
                   <EmptySpace max="-2" attributes="0"/>
               </Group>
@@ -170,13 +174,14 @@
                   <EmptySpace max="-2" attributes="0"/>
               </Group>
               <Group type="102" alignment="0" attributes="0">
-                  <EmptySpace min="-2" pref="19" max="-2" attributes="0"/>
+                  <EmptySpace min="-2" pref="20" max="-2" attributes="0"/>
                   <Group type="103" groupAlignment="3" attributes="0">
                       <Component id="txtPort" alignment="3" min="-2" max="-2" attributes="0"/>
                       <Component id="lblPort" alignment="3" min="-2" max="-2" attributes="0"/>
-                      <Component id="bttnOn" alignment="3" min="-2" max="-2" attributes="0"/>
                   </Group>
-                  <EmptySpace min="38" pref="129" max="32767" attributes="0"/>
+                  <EmptySpace min="-2" pref="28" max="-2" attributes="0"/>
+                  <Component id="bttnOn" min="-2" max="-2" attributes="0"/>
+                  <EmptySpace pref="75" max="32767" attributes="0"/>
               </Group>
           </Group>
         </DimensionLayout>
@@ -206,7 +211,7 @@
         </Container>
         <Component class="javax.swing.JToggleButton" name="bttnOn">
           <Properties>
-            <Property name="text" type="java.lang.String" value="DESACTIVADO"/>
+            <Property name="text" type="java.lang.String" value="ACTIVAR"/>
           </Properties>
           <Events>
             <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="bttnOnActionPerformed"/>
@@ -214,7 +219,7 @@
         </Component>
         <Component class="javax.swing.JTextField" name="txtPort">
           <Properties>
-            <Property name="text" type="java.lang.String" value="9999"/>
+            <Property name="text" type="java.lang.String" value="6112"/>
           </Properties>
         </Component>
         <Component class="javax.swing.JLabel" name="lblPort">

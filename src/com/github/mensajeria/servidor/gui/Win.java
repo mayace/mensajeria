@@ -5,6 +5,7 @@
  */
 package com.github.mensajeria.servidor.gui;
 
+import com.github.mensajeria.servidor.SServer;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.io.BufferedReader;
@@ -83,14 +84,14 @@ public class Win extends javax.swing.JFrame {
         });
         jScrollPane1.setViewportView(listUser);
 
-        bttnOn.setText("DESACTIVADO");
+        bttnOn.setText("ACTIVAR");
         bttnOn.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 bttnOnActionPerformed(evt);
             }
         });
 
-        txtPort.setText("9999");
+        txtPort.setText("6112");
 
         lblPort.setText("Port:");
 
@@ -102,10 +103,12 @@ public class Win extends javax.swing.JFrame {
                 .addContainerGap()
                 .addComponent(lblPort)
                 .addGap(18, 18, 18)
-                .addComponent(txtPort, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(bttnOn)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 69, Short.MAX_VALUE)
+                .addGroup(pnlBaseLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(pnlBaseLayout.createSequentialGroup()
+                        .addComponent(bttnOn)
+                        .addGap(0, 155, Short.MAX_VALUE))
+                    .addComponent(txtPort))
+                .addGap(18, 18, 18)
                 .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 185, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap())
         );
@@ -116,12 +119,13 @@ public class Win extends javax.swing.JFrame {
                 .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
                 .addContainerGap())
             .addGroup(pnlBaseLayout.createSequentialGroup()
-                .addGap(19, 19, 19)
+                .addGap(20, 20, 20)
                 .addGroup(pnlBaseLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(txtPort, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(lblPort)
-                    .addComponent(bttnOn))
-                .addGap(38, 129, Short.MAX_VALUE))
+                    .addComponent(lblPort))
+                .addGap(28, 28, 28)
+                .addComponent(bttnOn)
+                .addContainerGap(75, Short.MAX_VALUE))
         );
 
         getContentPane().add(pnlBase, java.awt.BorderLayout.CENTER);
@@ -261,41 +265,34 @@ public class Win extends javax.swing.JFrame {
     private javax.swing.JTextField txtPort;
     // End of variables declaration//GEN-END:variables
 
+
     private void init() {
         bttnOn.addItemListener(new ItemListener() {
 
             @Override
             public void itemStateChanged(ItemEvent ie) {
                 if (ie.getStateChange() == ItemEvent.SELECTED) {
-                    
+
+
                     listUser.removeAll();
                     
+
                     final String txtPort_text = txtPort.getText().trim();
                     final int port = (txtPort_text.isEmpty() ? 9999 : Integer.parseInt(txtPort_text));
+                    SServer ss = new SServer(port);
                     
-                    new Thread(new Runnable() {
+                    
+                    try {
+                        ss.start();
+                    } catch (IOException ex) {
+                        Logger.getLogger(Win.class.getName()).log(Level.SEVERE, null, ex);
 
-                        @Override
-                        public void run() {
-                            try {
-                                ServerSocket ss = new ServerSocket(port);
-                                for(;;){
-                                    Socket accept = ss.accept();
-                                    PrintWriter out = new PrintWriter(accept.getOutputStream());
-                                    BufferedReader in = new BufferedReader(new InputStreamReader(accept.getInputStream()));
-                                    
-                                    
-                                    
-                                }
-                            } catch (IOException ex) {
-                                Logger.getLogger(Win.class.getName()).log(Level.SEVERE, null, ex);
-                            }
-                        }
-                    }).start();
-                    
-                    ((JToggleButton)ie.getSource()).setText("ACTIVADO");
+                    }
+
+                    ((JToggleButton) ie.getSource()).setText("ACTIVADO");
+                    bttnOn.setEnabled(false);
                 } else {
-                    ((JToggleButton)ie.getSource()).setText("DESACTIVADO");
+                    ((JToggleButton) ie.getSource()).setText("DESACTIVADO");
                 }
             }
         });

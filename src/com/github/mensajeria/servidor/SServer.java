@@ -1,11 +1,15 @@
-
 package com.github.mensajeria.servidor;
 
+import com.github.mensajeria.compiler.servidor.Parser;
+import com.github.mensajeria.compiler.servidor.Scanner;
+import java.io.BufferedOutputStream;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringReader;
 import java.net.ServerSocket;
+import java.util.LinkedList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 
 public class SServer implements SIServer {
 
@@ -13,8 +17,6 @@ public class SServer implements SIServer {
     private int port;
     private Thread thread;
     private Runnable runnable;
-    private LinkedList<SOperacion> qopers = new LinkedList<>();
-
 
     public SServer(int port) {
         setSocket(null);
@@ -23,14 +25,11 @@ public class SServer implements SIServer {
 
         // watcher
         // new Thread(new Watcher(qopers) {
-
         //     @Override
         //     void process(Object o) {
         //         //ejecutar aqui las operaciones
-                
         //     }
         // }).start();
-
     }
 
     @Override
@@ -40,23 +39,41 @@ public class SServer implements SIServer {
             @Override
             public void run4ever() {
                 try {
-                    new Thread(new SClient(getSocket().accept()){
+                    new Thread(new SClient(getSocket().accept()) {
 
                         @Override
-                        void process_input(Object obj){
+                        void process_input(Object obj) {
+                            System.out.println(obj);
                             // procesar la entrada 
-                            String str = (String)str;
-                            Scanner s = new Scanner();
+                            String str = (String)obj;
+                            Scanner s = new Scanner(new StringReader(str));
                             Parser p = new Parser(s);
-
-                            p.parse();
-
+                            try {
+                                p.parse();
+                            } catch (Exception ex) {
+                                Logger.getLogger(SServer.class.getName()).log(Level.SEVERE, null, ex);
+                            }
+                            
+                           
+                            
                             // agregar a la cola de operaciones del servidor
-                            getOperaciones().addAll(p.operaciones);
+//                            getOperaciones().addAll(p.operaciones);
+                            
+                            write(obj);
                         }
+
                         @Override
-                        void process_output(Object obj){
+                        void process_output(Object obj) {
                             // procesar la la salida 
+                            try {
+                                BufferedOutputStream o = new BufferedOutputStream(getSocket().getOutputStream());
+                                o.write(obj.toString().getBytes(),0,obj.toString().getBytes().length);
+                                o.flush();
+                            } catch (IOException ex) {
+                                Logger.getLogger(SServer.class.getName()).log(Level.SEVERE, null, ex);
+                            }
+                            
+                            
                         }
                     }).start();
                 } catch (IOException ex) {
