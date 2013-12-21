@@ -22,8 +22,9 @@ import java.awt.Point;
 
 parser code {: 
         
-        
+        public LinkedList<SOperacion> operaciones = new LinkedList<>();
         public LinkedList<Err> errores=new LinkedList<>();
+        
         public SFile cuentas = new SFile(Paths.get("CUENTAS.ROY"),SFile.TIPO.CUENTA);
         public SFile contactos = new SFile(Paths.get("CONTACTOS.ROY"),SFile.TIPO.CONTACTOS);
         public SFile mensajes = new SFile(Paths.get("MENSAJES.ROY"),SFile.TIPO.MENSAJE);
@@ -49,6 +50,10 @@ action code{:
 	void report_fatal_error(String msg,Object info){
 		parser.report_fatal_error(msg,info);
 	}
+	void addOperacion(Object oper){
+		parser.operaciones.offer(oper);
+	}
+
 :}
    
 //===============================================================================================//
@@ -78,34 +83,44 @@ input      	::= stmt_list
 stmt_list   ::= stmt_list stmt
                 |stmt
                 ;
-stmt        ::= struct
-                //|busqueda
+stmt        ::= cuenta
+				|login
+				// |mensaje
+				// |sol_amistad
+				// |sol_respuesta
+				// |lista_contactos
+				// |busqueda
                 ;
 // *********************************************************************************
-// Struct - Procesa las operaciones definidas que el servidor pueda hacer
+// Login - Arma la operacion de login
 // *********************************************************************************
-struct      		::= cuenta
-						|login
-						|mensaje
-						;
-// LOGIN
+
 login 				::= ST_LOGIN LL1 cuenta_body:x LL2
 						{:
 							Attr user = x.getAttr("usuario");
 							Attr pass = x.getAttr("password");
 
+
 							// parsear con el parse de archivos
 							// y si existe iniciar session....
-							SFile.Cuenta cuenta = (SFile.Cuenta)parser.cuentas.get(SFile.getKey(SFile.TIPO.CUENTA,user.getString("val")));
+							// SFile.Cuenta cuenta = (SFile.Cuenta)parser.cuentas.get(SFile.getKey(SFile.TIPO.CUENTA,user.getString("val")));
 							
-							if(cuenta == null){
-								report_fatal_error("No existe la cuenta...",x.get("info"));
-							} else {
+							// if(cuenta == null){
+							// 	report_fatal_error("No existe la cuenta...",x.get("info"));
+							// } else {
 
-							}
+							// }
+
+							// Crear y agregar la operacion
+							addOperacion(new SOperacion(SOperacion.Login("","")));
 						:}
 						;
-// CUENTA
+
+
+// *********************************************************************************
+// Cuenta - Arma la operacion crear cuenta
+// *********************************************************************************
+
 cuenta 				::= ST_CUENTA LL1 cuenta_body:x LL2
 						{:
 							Attr user = x.getAttr("usuario");
@@ -153,7 +168,10 @@ password 			::= ST_PASSWORD LL1 id:x LL2
 							RESULT = x;
 						:}
 						;
-// MENSAJE
+// *********************************************************************************
+// Mensaje - Arma la operacion de un mensaje
+// *********************************************************************************
+
 mensaje 			::= ST_MENSAJE LL1 mensaje_body:x LL2
 						;
 mensaje_body 		::= mensaje_stmt_list
@@ -177,7 +195,7 @@ st_receptor_stmt_list 	::= st_receptor_stmt_list st_receptor_stmt
 st_receptor_stmt 		::= ST_CUENTA ID
 							;
 // *********************************************************************************
-// Búsqueda - Procesa operaciones de búsqueda unicamente.
+// Búsqueda - Arma la operacion de  una búsqueda unicamente.
 // *********************************************************************************
 busqueda 			::=	busqueda_body
 						;
