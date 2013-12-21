@@ -1,9 +1,16 @@
 package com.github.mensajeria.compiler.servidor;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.OpenOption;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.HashSet;
 
-class SOperacion {
+public class SOperacion {
 
     TIPO tipo;
     Object valor;
@@ -17,14 +24,14 @@ class SOperacion {
         this.valor = valor;
     }
 
-    public void exec() {
+    public String exec(HashSet<String> conectados) throws IOException {
         Object obj = getValor();
         if (obj instanceof Cuenta) {
             Cuenta val = (Cuenta) obj;
-            exec_cuenta(val);
+            return exec_cuenta(val, conectados);
         } else if (obj instanceof Login) {
             Login val = (Login) obj;
-            exec_login(val);
+            return exec_login(val, conectados);
         } else if (obj instanceof Mensaje) {
             Mensaje val = (Mensaje) obj;
             exec_mensaje(val);
@@ -43,14 +50,31 @@ class SOperacion {
         } else {
             System.err.println("Operación no soportada...");
         }
+        return null;
     }
 
-    void exec_login(Login val) {
-
+    String exec_login(Login val, HashSet<String> conectados) {
+        String ret = null;
+        if (conectados.contains(val.cuenta)) {
+            ret = "Ya se encuentra logeado...";
+        } else {
+            conectados.add(val.cuenta);
+            ret = "Operacion(Login) realizada con exito...";
+        }
+        return ret;
     }
 
-    void exec_cuenta(Cuenta val) {
+    String exec_cuenta(Cuenta val, HashSet<String> conectados) throws IOException {
+        String ret = null;
 
+        final Path path = Paths.get(SFile.FILE_CUENTAS);
+        if(!Files.exists(path)){
+            Files.createFile(path);
+        }
+
+        Files.write(path, val.toString().getBytes(), StandardOpenOption.APPEND);
+        ret = "Cuenta creada...";
+        return ret;
     }
 
     void exec_mensaje(Mensaje val) {
@@ -108,6 +132,23 @@ class SOperacion {
         public Cuenta(String name, String password) {
             this.name = name;
             this.password = password;
+        }
+
+        @Override
+        public String toString() {
+            String ret = null;
+
+            ret = String.format("<cuenta>(usuario=%s;password=%s;)", getName(), getPassword());
+
+            return ret;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public String getPassword() {
+            return password;
         }
 
     }

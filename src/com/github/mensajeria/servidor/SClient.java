@@ -26,7 +26,7 @@ public abstract class SClient implements Runnable {
     PrintWriter out = null;
 
     public SClient(Socket socket) {
-        System.err.println("created sclient...");
+//        System.err.println("created sclient...");
         this.socket = socket;
         this.qin = new LinkedList<>();
         this.qout = new LinkedList<>();

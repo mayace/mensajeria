@@ -110,7 +110,7 @@ SIMPLE_COMMENT  =        "//"[^\*\n\r]*{NEWLINE}
     "sino"              {return symbol(Sym.ELSE);}
     
     "enviar"            {return symbol(Sym.SEND);}
-    "pirntln"           {return symbol(Sym.PRINTLN);}
+    "println"           {return symbol(Sym.PRINTLN);}
 
     
 

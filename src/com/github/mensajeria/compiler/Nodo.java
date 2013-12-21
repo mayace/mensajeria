@@ -35,6 +35,7 @@ public class Nodo {
      * @param id
      */
     public Nodo(Object ref, boolean id) {
+        this.operation = OPERACION.ID;
         this.leaf = true;
         this.ref = ref;
         this.id = id;
@@ -51,8 +52,10 @@ public class Nodo {
         // pre 
         execNode(getLeft(), pila, simTable, errs);
         execNode(getRight(), pila, simTable, errs);
+        final OPERACION oper = getOperation();
+//        System.err.println(oper);
 
-        switch (getOperation()) {
+        switch (oper) {
             case RESTA:
                 execResta();
                 break;
@@ -65,12 +68,47 @@ public class Nodo {
             case DIVISION:
                 execDivision();
                 break;
-            default:
+            case LTHAN:
+                break;
+            case BTHAN:
+                break;
+            case NEQUAL:
+                break;
+            case DEQUAL:
+                break;
+            case LETHAN:
+                break;
+            case BETHAN:
+                break;
+            case OR:
+                break;
+            case AND:
+                break;
+            case STMT:
+                break;
+            case IF:
+                break;
+            case WHILE:
+                break;
+            case FOR:
+                break;
+            case ASIGNACION:
+                exec_asignacion(pila, simTable, errs);
+                break;
+            case ESPERAR:
+                break;
+            case ENVIAR:
+                break;
+            case PRINTLN:
+                exec_println(pila, simTable, errs);
+                break;
+            case ID:
                 if (isLeaf()) {
                     execLeaf(pila, simTable, errs);
-                } else {
-                    throw new AssertionError(getOperation().name());
                 }
+                break;
+            default:
+                throw new AssertionError(getOperation().name());
         }
         // post
     }
@@ -119,10 +157,11 @@ public class Nodo {
             if (objr instanceof Attr) {
                 Attr a = (Attr) objr;
                 v = a.get("val");
+                setVal(v);
             }
         }
 
-        setVal(v);
+        
     }
 
     private void execResta() {
@@ -153,11 +192,51 @@ public class Nodo {
         setVal((Integer) l.getVal() / (Integer) r.getVal());
     }
 
+    private void exec_asignacion(Object pila, Object simTable, Object errs) {
+        Object expr = getLeft().getVal();
+        Object objr = getRight().getVal();
+
+        Object[] data = new Object[100];
+        HashMap<String, Sim> tabla = new HashMap<>();
+        LinkedList<Err> errores = new LinkedList<>();
+        ArrayList<Attr> ids;
+
+        if (pila instanceof Object[]) {
+            data = (Object[]) pila;
+        }
+        if (simTable instanceof HashMap) {
+            tabla = (HashMap) simTable;
+        }
+        if (errs instanceof LinkedList) {
+            errores = (LinkedList<Err>) errs;
+        }
+
+        if (objr instanceof ArrayList) {
+            ids = (ArrayList) objr;
+
+            for (Attr attr : ids) {
+                final String idname = attr.getString("val");
+                System.err.println(idname + "=" + expr);
+                if (tabla.containsKey(idname)) {
+                    Sim sim = tabla.get(idname);
+                    data[sim.getPos()] = expr;
+                } else {
+                    errores.add(new Err("No exista la variable", attr.getSymbol("info"), Err.TIPO.SEMANTICO));
+                }
+            }
+        }
+
+    }
+
+    private void exec_println(Object pila, Object simTable, Object errs) {
+        System.out.println(getLeft());
+    }
+
 //<editor-fold defaultstate="collapsed" desc="CONSTANTES">
     public static enum OPERACION {
 
         RESTA, SUMA, MULTIPLICACION, DIVISION, LTHAN, BTHAN, NEQUAL, DEQUAL, LETHAN, BETHAN, OR, AND,
-        STMT,IF,WHILE,FOR,ASIGNACION,ESPERAR,ENVIAR,PRINTLN
+        STMT, IF, WHILE, FOR, ASIGNACION, ESPERAR, ENVIAR, PRINTLN, ID
     }
 //</editor-fold>
 

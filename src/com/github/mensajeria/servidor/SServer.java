@@ -1,13 +1,13 @@
 package com.github.mensajeria.servidor;
 
 import com.github.mensajeria.compiler.servidor.Parser;
+import com.github.mensajeria.compiler.servidor.SOperacion;
 import com.github.mensajeria.compiler.servidor.Scanner;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.io.StringReader;
 import java.net.ServerSocket;
-import java.util.LinkedList;
+import java.util.HashSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -17,6 +17,7 @@ public class SServer implements SIServer {
     private int port;
     private Thread thread;
     private Runnable runnable;
+    private final HashSet<String> conectados=new HashSet<>();
 
     public SServer(int port) {
         setSocket(null);
@@ -45,21 +46,28 @@ public class SServer implements SIServer {
                         void process_input(Object obj) {
                             System.out.println(obj);
                             // procesar la entrada 
-                            String str = (String)obj;
-                            Scanner s = new Scanner(new StringReader(str));
+                            Scanner s = new Scanner(new StringReader(obj.toString()));
                             Parser p = new Parser(s);
                             try {
                                 p.parse();
                             } catch (Exception ex) {
+                                write(ex.toString());
                                 Logger.getLogger(SServer.class.getName()).log(Level.SEVERE, null, ex);
                             }
                             
                            
                             
                             // agregar a la cola de operaciones del servidor
-//                            getOperaciones().addAll(p.operaciones);
+                            for (SOperacion oper : p.operaciones) {
+                                try {
+                                    write(oper.exec(conectados));
+                                } catch (IOException ex) {
+                                    Logger.getLogger(SServer.class.getName()).log(Level.SEVERE, null, ex);
+                                    write(ex.toString());
+                                }
+                            }
                             
-                            write(obj);
+                            //write(obj);
                         }
 
                         @Override

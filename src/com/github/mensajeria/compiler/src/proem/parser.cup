@@ -66,6 +66,16 @@ action code{:
     void report_error(String msg,Object info){
         parser.report_error(msg,info);
     }
+
+    Object[] getPila(){
+        return parser.pila;
+    }
+    HashMap<String,Sim> getTabla(){
+        return parser.symtable;
+    }
+    LinkedList<Err> getErrs(){
+        return parser.errors;
+    }
 :}
 
 /****************************************************************************************/
@@ -86,7 +96,11 @@ begin       ::= input   {:System.out.println("Compiled...");:}
 // *********************************************************************************
 // Input - Contenido de la entrada
 // *********************************************************************************
-input       ::=	stmt_list:x {:RESULT = x;:}
+input       ::=	stmt_list:x 
+                {:
+                    x.getNodo("nodo").exec(getPila(),getTabla(),getErrs());
+                    RESULT = x;
+                :}
                 ;
 
 stmt_list   ::= stmt_list:l stmt:x
@@ -129,7 +143,8 @@ declaracion ::= id_list:l IS tipo:t PCOMA
                         } else{
                             report_error("Ya existe la variable '" + name + "'", a.getSymbol("info"));
                         }
-                    }               
+                    } 
+                    RESULT = new Attr();              
 
                 :}
                 ;
@@ -137,7 +152,7 @@ asignacion  ::= expr:e EQUAL id_list:l PCOMA
                 {:
                     
                     
-                    Nodo nodo = new Nodo(Nodo.OPERACION.ASIGNACION,e.getNodo("nodo"),null);
+                    Nodo nodo = new Nodo(Nodo.OPERACION.ASIGNACION,e.getNodo("nodo"),new Nodo(new Attr("val",l.getList("list")),false));
 
                     e.set("list",l.getList("list"));
                     e.set("nodo",nodo);
@@ -298,7 +313,7 @@ boolean         ::= BOOLEAN:x   {:
                                     a.set("val",x);
                                     a.set("type","boolean");
                                     a.set("info",CUP$Parser$stack.peek());
-                                    a.set("nodo",new Nodo(a.get("info"),false));
+                                    a.set("nodo",new Nodo(a,false));
                                     RESULT = a;
                                 :}
                     ;
@@ -307,7 +322,7 @@ string          ::= STRING:x     {:
                                     a.set("val",x);
                                     a.set("type","string");
                                     a.set("info",CUP$Parser$stack.peek());
-                                    a.set("nodo",new Nodo(a.get("info"),false));
+                                    a.set("nodo",new Nodo(a,false));
                                     RESULT = a;
                                 :}
                     ;
@@ -316,7 +331,7 @@ int             ::= INT:x       {:
                                     a.set("val",x);
                                     a.set("type","int");
                                     a.set("info",CUP$Parser$stack.peek());
-                                    a.set("nodo",new Nodo(a.get("info"),false));
+                                    a.set("nodo",new Nodo(a,false));
                                     RESULT = a;
                                 :}
                     ;
@@ -339,7 +354,7 @@ id              ::= ID:x        {:
                                     a.set("id",true);
                                     a.set("exists",exists);
                                     a.set("info",CUP$Parser$stack.peek());
-                                    a.set("nodo",new Nodo(a.get("info"),true));
+                                    a.set("nodo",new Nodo(a,true));
                                     RESULT = a;
                                 :}
                     ;

@@ -15,6 +15,10 @@ public class SFile {
 
     Object data = null;
 
+    public static String FILE_CUENTAS = "CUENTAS.ROY";
+    public static String FILE_MENSAJES = "MENSAJES.ROY";
+    public static String FILE_CONTACTOS = "CONTACTOS.ROY";
+
     public SFile(Path file, TIPO tipo) {
         this.file = file;
         this.tipo = tipo;

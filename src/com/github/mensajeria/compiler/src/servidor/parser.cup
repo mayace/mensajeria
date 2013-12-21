@@ -5,6 +5,7 @@ import com.github.mensajeria.compiler.Attr;
 import com.github.mensajeria.compiler.Err;
 
 import java.nio.file.Paths;
+import java.nio.file.Files;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
@@ -25,9 +26,9 @@ parser code {:
         public LinkedList<SOperacion> operaciones = new LinkedList<>();
         public LinkedList<Err> errores=new LinkedList<>();
         
-        public SFile cuentas = new SFile(Paths.get("CUENTAS.ROY"),SFile.TIPO.CUENTA);
-        public SFile contactos = new SFile(Paths.get("CONTACTOS.ROY"),SFile.TIPO.CONTACTOS);
-        public SFile mensajes = new SFile(Paths.get("MENSAJES.ROY"),SFile.TIPO.MENSAJE);
+        public SFile cuentas = new SFile(Paths.get(SFile.FILE_CUENTAS),SFile.TIPO.CUENTA);
+        public SFile contactos = new SFile(Paths.get(SFile.FILE_CONTACTOS),SFile.TIPO.CONTACTOS);
+        public SFile mensajes = new SFile(Paths.get(SFile.FILE_MENSAJES),SFile.TIPO.MENSAJE);
         
         
         public void report_error(String message, Object info){
@@ -50,10 +51,17 @@ action code{:
 	void report_fatal_error(String msg,Object info){
 		parser.report_fatal_error(msg,info);
 	}
-	void addOperacion(Object oper){
+	void addOperacion(SOperacion oper){
+		System.err.println("operacion agregada...");
 		parser.operaciones.offer(oper);
 	}
 
+	SFile getCuentas() throws IOException{
+		if(!Files.exists(parser.cuentas.getFile())){
+            Files.createFile(parser.cuentas.getFile());
+        }
+		return parser.cuentas;
+	}
 :}
    
 //===============================================================================================//
@@ -103,16 +111,19 @@ login 				::= ST_LOGIN LL1 cuenta_body:x LL2
 
 							// parsear con el parse de archivos
 							// y si existe iniciar session....
-							// SFile.Cuenta cuenta = (SFile.Cuenta)parser.cuentas.get(SFile.getKey(SFile.TIPO.CUENTA,user.getString("val")));
+							SFile.Cuenta cuenta = (SFile.Cuenta)parser.cuentas.get(SFile.getKey(SFile.TIPO.CUENTA,user.getString("val")));
 							
-							// if(cuenta == null){
-							// 	report_fatal_error("No existe la cuenta...",x.get("info"));
-							// } else {
+							if(cuenta == null){
+							 	report_fatal_error("No existe la cuenta...",x.get("info"));
+							} else {
+								// Crear y agregar la operacion
+								if(pass.getString("val").equals(pass.getString("val"))){
+									addOperacion(new SOperacion(new SOperacion.Login(user.getString("val"),pass.getString("val"))));
+								} else {
+									report_error("nombre de cuenta o contraseña no coinciden...",null);
+								}
+							}
 
-							// }
-
-							// Crear y agregar la operacion
-							addOperacion(new SOperacion(SOperacion.Login("","")));
 						:}
 						;
 
@@ -128,6 +139,14 @@ cuenta 				::= ST_CUENTA LL1 cuenta_body:x LL2
 
 							// parsear con el parse de archivos
 							// y if: existe error else: crear cuenta
+							SFile.Cuenta cuenta = (SFile.Cuenta)parser.cuentas.get(SFile.getKey(SFile.TIPO.CUENTA,user.getString("val")));
+							
+							if(cuenta != null){
+							 	report_fatal_error("Ya existe la cuenta...",x.get("info"));
+							} else {
+								// Crear y agregar la operacion
+								addOperacion(new SOperacion(new SOperacion.Login(user.getString("val"),pass.getString("val"))));
+							}
 						:}
 						;
 cuenta_body 		::= cuenta_stmt_list:x {:RESULT = x;:}
