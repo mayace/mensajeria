@@ -1,8 +1,4 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
+
 package com.github.mensajeria.servidor;
 
 import com.github.mensajeria.compiler.servidor.Parser;
@@ -21,11 +17,7 @@ import java.util.Stack;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-/**
- *
- * @author ce
- */
-public class SClient implements Runnable {
+public abstract class SClient implements Runnable {
 
     Socket socket;
     Queue<Object> qin;
@@ -33,8 +25,8 @@ public class SClient implements Runnable {
 
     PrintWriter out = null;
 
-    public SClient(Socket sclient) {
-        this.socket = sclient;
+    public SClient(Socket socket) {
+        this.socket = socket;
         this.qin = new LinkedList<>();
         this.qout = new LinkedList<>();
 
@@ -43,18 +35,19 @@ public class SClient implements Runnable {
 
             @Override
             void process(Object o) {
-                if (o instanceof String) {
-                    String text = (String) o;
-                    // parser aqui...
-                    Scanner s = new Scanner(new StringReader(text));
-                    Parser p = new Parser(s);
-                    try {
-                        p.parse();
-                        //escribo respuesta (lo pongo en la cola de out)
-                    } catch (Exception ex) {
-                        Logger.getLogger(SClient.class.getName()).log(Level.SEVERE, null, ex);
-                    }
-                }
+                // if (o instanceof String) {
+                //     String text = (String) o;
+                //     // parser aqui...
+                //     Scanner s = new Scanner(new StringReader(text));
+                //     Parser p = new Parser(s);
+                //     try {
+                //         p.parse();
+                //         //escribo respuesta (lo pongo en la cola de out)
+                //     } catch (Exception ex) {
+                //         Logger.getLogger(SClient.class.getName()).log(Level.SEVERE, null, ex);
+                //     }
+                // }
+                process_input(o);
             }
         }).start();
 
@@ -62,15 +55,16 @@ public class SClient implements Runnable {
 
             @Override
             void process(Object o) {
-                PrintWriter out = getOut();
-                if (out == null) {
-                    return;
-                }
+                // PrintWriter out = getOut();
+                // if (out == null) {
+                //     return;
+                // }
 
-                if (o instanceof String) {
-                    String text = (String) o;
-                    out.write(text);
-                }
+                // if (o instanceof String) {
+                //     String text = (String) o;
+                //     out.write(text);
+                // }
+                process_output(o);
             }
         }).start();
     }
@@ -92,6 +86,9 @@ public class SClient implements Runnable {
         }
 
     }
+
+    abstract void process_input(Object obj);
+    abstract void process_output(Object obj);
 
     //<editor-fold defaultstate="collapsed" desc="getter methods">
     public Queue<Object> getQin() {
@@ -157,9 +154,9 @@ abstract class Watcher implements Runnable {
             if (o instanceof Queue) {
                 Queue q = (Queue) o;
                 for (;;) {
-                    Object poll = q.poll();
-                    if (poll != null) {
-                        process(o);
+                    Object polled = q.poll();
+                    if (polled != null) {
+                        process(polled);
                     } else {
                         try {
                             o.wait();
