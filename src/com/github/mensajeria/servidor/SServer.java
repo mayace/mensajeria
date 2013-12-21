@@ -1,5 +1,6 @@
 package com.github.mensajeria.servidor;
 
+import com.github.mensajeria.compiler.Attr;
 import com.github.mensajeria.compiler.servidor.Parser;
 import com.github.mensajeria.compiler.servidor.SOperacion;
 import com.github.mensajeria.compiler.servidor.Scanner;
@@ -81,7 +82,7 @@ public class SServer implements SIServer {
                                 Logger.getLogger(SServer.class.getName()).log(Level.SEVERE, null, ex);
                             }
                             
-                            
+                           
                         }
                     }).start();
                 } catch (IOException ex) {

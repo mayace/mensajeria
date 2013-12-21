@@ -21,26 +21,19 @@ import java.awt.Point;
 
 
 parser code {: 
-    
-    public HashMap<String,Sim> symtable = new HashMap<>();
     public LinkedList<Err> errors = new LinkedList<>();
-
-    public Object[] pila = new Object[100];
-    public int p = 0;
-    
-
+    public LinkedList<Nodo> nodos = new LinkedList<>();
 
     public void report_error(String message, Object info){
         Err e = new Err(message,null,null);
+
         if(info instanceof java_cup.runtime.Symbol){
             e.setSym((java_cup.runtime.Symbol)info);
         }
         errors.add(e);
-        e.println();
     }
     public void report_fatal_error(String message,Object info){
         report_error(message,info);
-        errors.getLast().println();
     }
 :};
 
@@ -67,14 +60,11 @@ action code{:
         parser.report_error(msg,info);
     }
 
-    Object[] getPila(){
-        return parser.pila;
-    }
-    HashMap<String,Sim> getTabla(){
-        return parser.symtable;
-    }
     LinkedList<Err> getErrs(){
         return parser.errors;
+    }
+    void addNodo(Nodo nodo){
+        parser.nodos.add(nodo);
     }
 :}
 
@@ -87,7 +77,7 @@ terminal        String 		KW_INT,KW_STRING,KW_BOOLEAN,KW_QUEUE,KW_LIST,INT,STRING
 non terminal    Attr        begin,input,stmt_list,stmt,declaracion,asignacion,control,id_list,
                             esperar,enviar,tipo,expr,expr1,expr2,expr3,expr4,expr5,
                             id,string,int,boolean,params,expr_list,while,for,if,elseif,
-                            expr_list_p,control_body
+                            expr_list_p,control_body,println
 							;
 /****************************************************************************************/
 begin       ::= input   {:System.out.println("Compiled...");:}
@@ -96,99 +86,72 @@ begin       ::= input   {:System.out.println("Compiled...");:}
 // *********************************************************************************
 // Input - Contenido de la entrada
 // *********************************************************************************
-input       ::=	stmt_list:x 
-                {:
-                    x.getNodo("nodo").exec(getPila(),getTabla(),getErrs());
-                    RESULT = x;
-                :}
+input       ::=	stmt_list
                 ;
 
-stmt_list   ::= stmt_list:l stmt:x
-                {:
-                    l.set("nodo",new Nodo(Nodo.OPERACION.STMT,l.getNodo("nodo"),x.getNodo("nodo")));
-                    RESULT = l;
-                :}
-                |stmt:x
-                {:
-                    Attr a = new Attr();
-                    a.set("nodo",new Nodo(Nodo.OPERACION.STMT,x.getNodo("nodo"),null));
-                    RESULT = a;
-                :}
+stmt_list   ::= stmt_list stmt
+                |stmt
                 ;
 stmt        ::= declaracion:x   {:RESULT = x;:}
                 |asignacion:x   {:RESULT = x;:}
                 |esperar:x      {:RESULT = x;:}
                 |enviar:x       {:RESULT = x;:}
                 |control:x      {:RESULT = x;:}
-                |PRINTLN expr:e       
+                |println:x
+                ;
+println     ::= PRINTLN expr:e PCOMA
                 {:
-                    Attr a = new Attr();
-                    a.set("nodo",new Nodo(Nodo.OPERACION.PRINTLN,e.getNodo("nodo"),null));
-
-                    RESULT = a;
+                    addNodo(new Nodo(Nodo.OPERACION.PRINTLN,e.getNodo("nodo"),null));
                 :}
                 ;
 declaracion ::= id_list:l IS tipo:t PCOMA
                 {:
-                    for(Attr a : l.getList("list")){
-
-                        String name = a.getString("val");
-                        String type = t.getString("type");
-
-
-                        if(getSim(name) == null){
-                            if(type == null){
-                                addSim(name,type,null);
-                            }
-                        } else{
-                            report_error("Ya existe la variable '" + name + "'", a.getSymbol("info"));
-                        }
-                    } 
-                    RESULT = new Attr();              
+                    addNodo(new Nodo(
+                                    Nodo.OPERACION.DECLARACION,
+                                    new Nodo(new Attr("val",t),false),
+                                    new Nodo(new Attr("val",l.get("list")),false))
+                                    );
 
                 :}
                 ;
 asignacion  ::= expr:e EQUAL id_list:l PCOMA
                 {:
                     
-                    
-                    Nodo nodo = new Nodo(Nodo.OPERACION.ASIGNACION,e.getNodo("nodo"),new Nodo(new Attr("val",l.getList("list")),false));
+                    addNodo(new Nodo(
+                                    Nodo.OPERACION.ASIGNACION,
+                                    new Nodo(new Attr("val",l.get("list")),false),
+                                    e.getNodo("nodo"),
+                                    ));
 
-                    e.set("list",l.getList("list"));
-                    e.set("nodo",nodo);
-                    RESULT = e;
                 :}
                 |expr_list:e LP params:p RP EQUAL id_list:l PCOMA
                 {:
                     Integer count = e.getInteger("count");
                     if(count == 1){
+                        //id
+                        //funcion
+                        //params
                         
                         e.set("params",p.getList("list"));
-                        e.set("list",l.get("list"));
+                        //e.set("list",l.get("list"));  
 
-                        Nodo left = new Nodo(e,false);
-                        Nodo nodo = new Nodo(Nodo.OPERACION.ASIGNACION,left,null);
-
-                        e.set("nodo",nodo);
+                        addNodo(new Nodo(
+                                        Nodo.OPERACION.ASIGNACION,
+                                        new Nodo(new Attr("val",l.get("list")),false),
+                                        new Nodo(e,false)
+                                        ));
                     }   
                 :}
                 ;
 esperar     ::= WAIT LP expr:e RP PCOMA
                 {:
-                    Attr a = new Attr();
-                    Nodo nodo = new Nodo(Nodo.OPERACION.ESPERAR,e.getNodo("nodo"),null);
+                    addNodo(new Nodo(Nodo.OPERACION.ESPERAR,e.getNodo("nodo"),null));
 
-                    a.set("nodo",nodo);
-                    RESULT = a;
                 :}
                 ;
 enviar      ::= SEND LP expr:e RP PCOMA
                 {:
-                    Attr a = new Attr();
-                    Nodo nodo = new Nodo(Nodo.OPERACION.ENVIAR,e.getNodo("nodo"),null);
-
-                    a.set("nodo",nodo);
-                    RESULT = a;
+                    addNodo(new Nodo(Nodo.OPERACION.ENVIAR,e.getNodo("nodo"),null));
                 :}
                 ;
 
@@ -412,40 +375,47 @@ expr_list_p     ::= expr_list_p:l COMA expr:x
                         RESULT = a;
                     :}
                     ;
-control         ::= while:x   {:RESULT = x;:}
-                    |for:x    {:RESULT = x;:}
-                    |if:x     {:RESULT = x;:}
+control         ::= while
+                    |for
+                    |if
                     ;
 while           ::= WHILE LP expr:e RP LL1 control_body:x LL2
                     {:
-                        Attr a = new Attr();
-                        Nodo nodo = new Nodo(Nodo.OPERACION.WHILE,e.getNodo("nodo"),x.getNodo("nodo"));
-
-                        a.set("nodo",nodo);
-                        RESULT = a;
+                        Nodo nodo = new Nodo(
+                                        Nodo.OPERACION.WHILE,
+                                        e.getNodo("nodo"),
+                                        x.getNodo("nodo")
+                                        );
                     :}
                     ;
 for             ::= FOR LP id:id TO expr:e RP LL1 control_body:x LL2
                     {:
-                        Attr a = new Attr();
-                        Nodo nodo = new Nodo(Nodo.OPERACION.FOR,e.getNodo("nodo"),x.getNodo("nodo"));
 
-                        e.set("id",id);
-                        a.set("nodo",nodo);
-                        RESULT = a;
+                        Attr val = new Attr();
+                        val.set("id",id);
+                        val.set("expr",e.getNodo("nodo"));
+                        addNodo(new Nodo(
+                                        Nodo.OPERACION.FOR,
+                                        new Nodo(new Attr("val",val),false),
+                                        x.getNodo("nodo")
+                                        ));
                     :}
                     ;
 if              ::= IF LP expr:e RP LL1 control_body:x LL2 elseif:x1
                     {:
-                        Attr a = new Attr();
-                        Nodo nodo = new Nodo(Nodo.OPERACION.IF,e.getNodo("nodo"),x.getNodo("nodo"));
+                        Attr val = new Attr();
 
-                        a.set("nodo",nodo);
-                        a.set("else",e.getNodo("nodo"));
-                        RESULT = a;
+                        val.set("if",x.getNodo("nodo"));
+                        val.set("else",x1.getNodo("nodo"));
+
+                        addNodo(new Nodo(
+                                        Nodo.OPERACION.IF,
+                                        e.getNodo("nodo"),
+                                        new Nodo(new Attr("val",val),false)
+                                        ));
                     :}
                     ;
-elseif          ::= ELSE LL1 control_body:x LL2 {:RESULT = new Attr();:}
+elseif          ::= ELSE LL1 control_body:x LL2 {:RESULT = x;:}
                     |{:RESULT = new Attr();:}
                     ;
 
