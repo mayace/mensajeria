@@ -1,8 +1,4 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
+
 package com.github.mensajeria.servidor;
 
 import java.io.IOException;
@@ -10,21 +6,31 @@ import java.net.ServerSocket;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-/**
- *
- * @author ce
- */
+
 public class SServer implements SIServer {
 
     private ServerSocket socket;
     private int port;
     private Thread thread;
     private Runnable runnable;
+    private LinkedList<SOperacion> qopers = new LinkedList<>();
+
 
     public SServer(int port) {
         setSocket(null);
         setThread(null);
         this.port = port;
+
+        // watcher
+        // new Thread(new Watcher(qopers) {
+
+        //     @Override
+        //     void process(Object o) {
+        //         //ejecutar aqui las operaciones
+                
+        //     }
+        // }).start();
+
     }
 
     @Override
@@ -34,7 +40,25 @@ public class SServer implements SIServer {
             @Override
             public void run4ever() {
                 try {
-                    new Thread(new SClient(getSocket().accept())).start();
+                    new Thread(new SClient(getSocket().accept()){
+
+                        @Override
+                        void process_input(Object obj){
+                            // procesar la entrada 
+                            String str = (String)str;
+                            Scanner s = new Scanner();
+                            Parser p = new Parser(s);
+
+                            p.parse();
+
+                            // agregar a la cola de operaciones del servidor
+                            getOperaciones().addAll(p.operaciones);
+                        }
+                        @Override
+                        void process_output(Object obj){
+                            // procesar la la salida 
+                        }
+                    }).start();
                 } catch (IOException ex) {
                     Logger.getLogger(SServer.class.getName()).log(Level.SEVERE, null, ex);
                     this.terminate();
