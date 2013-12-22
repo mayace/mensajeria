@@ -673,8 +673,12 @@ public class Nodo {
                                 String param_tipo = ((Attr) param_nodo.getVal()).getString("tipo");
                                 if (param_tipo.equals("int")) {
                                     Integer param_val = ((Attr) param_nodo.getVal()).getInteger("val");
-                                    r_val.set("tipo", "string");
-                                    r_val.set("val", lista.get(param_val));
+                                    if (param_val < funcion_params.size()) {
+                                        r_val.set("tipo", "string");
+                                        r_val.set("val", lista.get(param_val));
+                                    } else {
+                                        errors.add(new Err("Indice fuera de rango: " + param_val + "<" + funcion_params.size(), funcion_info, Err.TIPO.SEMANTICO));
+                                    }
                                 } else {
                                     errors.add(new Err("Se esperaba un entero para funcion: " + funcion_name, funcion_info, Err.TIPO.SEMANTICO));
                                 }

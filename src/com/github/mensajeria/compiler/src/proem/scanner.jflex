@@ -97,6 +97,10 @@ SIMPLE_COMMENT  =        "//"[^\*\n\r]*{NEWLINE}
     
     "("                 {return symbol(Sym.LP);}
     ")"                 {return symbol(Sym.RP);}
+    
+    "{"                 {return symbol(Sym.LL1);}
+    "}"                 {return symbol(Sym.LL2);}
+
     "-"                 {return symbol(Sym.MINUS);}
     "+"                 {return symbol(Sym.PLUS);}
     "*"                 {return symbol(Sym.MULTI);}
