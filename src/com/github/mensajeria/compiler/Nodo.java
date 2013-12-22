@@ -57,18 +57,19 @@ public class Nodo {
 
         switch (oper) {
             case RESTA:
-                execResta();
+                execResta(pila, simTable, errs);
                 break;
             case SUMA:
-                execSuma();
+                execSuma(pila, simTable, errs);
                 break;
             case MULTIPLICACION:
-                execMultiplicacion();
+                execMultiplicacion(pila, simTable, errs);
                 break;
             case DIVISION:
-                execDivision();
+                execDivision(pila,simTable,errs);
                 break;
             case LTHAN:
+                execMenorQue(pila,simTable,errs);
                 break;
             case BTHAN:
                 break;
@@ -142,7 +143,17 @@ public class Nodo {
                             String name = a.getString("val");
 
                             if (map.containsKey(name)) {
-                                setVal(data[map.get(name).getPos()]);
+                                //setVal(data[map.get(name).getPos()]);
+                                Sim simbolo = map.get(name);
+                                Attr b = new Attr();
+                                Object valSimbolo = data[simbolo.getPos()];
+                                        
+                                b.set("val", valSimbolo);
+                                b.set("type", simbolo.getType());
+                                b.set("info", a.get("info"));
+                                
+                                setVal(b);
+                                
                             } else {
                                 errors.add(new Err(name, a.getSymbol("info"), Err.TIPO.SEMANTICO));
                             }
@@ -155,41 +166,157 @@ public class Nodo {
 
         } else {
             if (objr instanceof Attr) {
+                
                 Attr a = (Attr) objr;
                 v = a.get("val");
-                setVal(v);
+                //setVal(v);
+                
+                Attr b = new Attr();
+                b.set("type", a.get("type"));
+                b.set("val", a.get("val"));
+                b.set("info", a.get("info"));
+                setVal(b);
             }
         }
 
         
     }
 
-    private void execResta() {
+    private void execResta(Object pila, Object simTable, Object errs) {
+        LinkedList errores = (LinkedList)errs;
         Nodo l = getLeft();
         Nodo r = getRight();
-
-        setVal((Integer) l.getVal() - (Integer) r.getVal());
+        
+        Attr lAtrib = (Attr)l.getVal();
+        Attr rAtrib = (Attr)r.getVal();
+        
+        String lTipo = lAtrib.getString("type");
+        String rTipo = rAtrib.getString("type");
+        
+        
+        
+        if((lTipo.equals("int"))&&(rTipo.equals("int")))
+        {
+            Integer lValor = lAtrib.getInteger("val");
+            Integer rValor = rAtrib.getInteger("val");
+        
+            Attr attrResult = new Attr();
+            attrResult.set("type", "int");
+            attrResult.set("val", (lValor-rValor));
+            setVal(attrResult);
+        }
+        else
+        {
+            Err nuevoError = new Err("error: los tipos no son enteros", null, Err.TIPO.SEMANTICO);
+            errores.add(nuevoError);  
+        }
     }
 
-    private void execSuma() {
+    private void execSuma(Object pila, Object simTable, Object errs) {
+        LinkedList errores = (LinkedList)errs;
         Nodo l = getLeft();
         Nodo r = getRight();
-
-        setVal((Integer) l.getVal() + (Integer) r.getVal());
+        
+        Attr lAtrib = (Attr)l.getVal();
+        Attr rAtrib = (Attr)r.getVal();
+        
+        String lTipo = lAtrib.getString("type");
+        String rTipo = rAtrib.getString("type");
+        
+        if((lTipo.equals("string"))||(rTipo.equals("string")))
+        {
+            String lvalor = lAtrib.getString("val");
+            String rValor = rAtrib.getString("val");
+            String res = lvalor+rValor;
+            //setVal(res);
+            
+            
+            Attr attrResult = new Attr();
+            attrResult.set("type", "string");
+            attrResult.set("val", (res));
+            setVal(attrResult);
+        }
+        
+        else if((lTipo.equals("int"))&&(rTipo.equals("int")))
+        {
+            Integer lValor = lAtrib.getInteger("val");
+            Integer rValor = rAtrib.getInteger("val");
+            //setVal(lValor-rValor);
+            int valOperacion = lValor+rValor;
+            
+            Attr attrResult = new Attr();
+            attrResult.set("type", "int");
+            attrResult.set("val", (valOperacion));
+            setVal(attrResult);
+        }
+        else
+        {
+            Err nuevoError = new Err("error de tipos, no coinciden", null, Err.TIPO.SEMANTICO);
+            errores.add(nuevoError);  
+        }
     }
 
-    private void execMultiplicacion() {
+    private void execMultiplicacion(Object pila, Object simTable, Object errs) {
+        LinkedList errores = (LinkedList)errs;
         Nodo l = getLeft();
         Nodo r = getRight();
-
-        setVal((Integer) l.getVal() * (Integer) r.getVal());
+        
+        Attr lAtrib = (Attr)l.getVal();
+        Attr rAtrib = (Attr)r.getVal();
+        
+        String lTipo = lAtrib.getString("type");
+        String rTipo = rAtrib.getString("type");
+        
+        
+        
+        if((lTipo.equals("int"))&&(rTipo.equals("int")))
+        {
+            Integer lValor = lAtrib.getInteger("val");
+            Integer rValor = rAtrib.getInteger("val");
+            int valOperacion = lValor*rValor;
+            
+            Attr attrResult = new Attr();
+            attrResult.set("type", "int");
+            attrResult.set("val", (valOperacion));
+            setVal(attrResult);
+        }
+        else
+        {
+            Err nuevoError = new Err("error: los tipos no son enteros", null, Err.TIPO.SEMANTICO);
+            errores.add(nuevoError);  
+        }
+        
     }
 
-    private void execDivision() {
+    private void execDivision(Object pila, Object simTable, Object errs) {
+        LinkedList errores =(LinkedList)errs;
         Nodo l = getLeft();
         Nodo r = getRight();
-
-        setVal((Integer) l.getVal() / (Integer) r.getVal());
+        
+        Attr lAtrib=(Attr)l.getVal();
+        Attr rAtrib=(Attr)r.getVal();
+        
+        String lTipo = lAtrib.getString("type");
+        String rTipo = rAtrib.getString("type");
+        
+        
+        
+        if((lTipo.equals("int"))&&(rTipo.equals("int")))
+        {
+            Integer lValor = lAtrib.getInteger("val");
+            Integer rValor = rAtrib.getInteger("val");
+            int valDivision = lValor/rValor;
+            
+            Attr attrResult = new Attr();
+            attrResult.set("type", "int");
+            attrResult.set("val", (valDivision));
+            setVal(attrResult);
+        }
+        else
+        {
+            Err nuevoError = new Err("error: los tipos no son enteros", null, Err.TIPO.SEMANTICO);
+            errores.add(nuevoError);  
+        }
     }
 
     private void exec_asignacion(Object pila, Object simTable, Object errs) {
@@ -230,6 +357,39 @@ public class Nodo {
 
     private void exec_println(Object pila, Object simTable, Object errs) {
         System.out.println(getLeft());
+    }
+
+    private void execMenorQue(Object pila, Object simTable, Object errs) {
+        LinkedList errores =(LinkedList)errs;
+        Nodo l = getLeft();
+        Nodo r = getRight();
+        
+        Attr lAtrib=(Attr)l.getVal();
+        Attr rAtrib=(Attr)r.getVal();
+        
+        String lTipo = lAtrib.getString("type");
+        String rTipo = rAtrib.getString("type");
+        
+        
+        
+        if((lTipo.equals("boolean"))&&(rTipo.equals("boolean")))
+        {
+            
+            Integer lValor = lAtrib.getInteger("val");
+            Integer rValor = rAtrib.getInteger("val");
+            int valDivision = lValor/rValor;
+            
+            Attr attrResult = new Attr();
+            attrResult.set("type", "int");
+            attrResult.set("val", (valDivision));
+            setVal(attrResult);
+        }
+        else
+        {
+            Err nuevoError = new Err("error: los tipos no son enteros", null, Err.TIPO.SEMANTICO);
+            errores.add(nuevoError);  
+        }
+        
     }
 
 //<editor-fold defaultstate="collapsed" desc="CONSTANTES">
