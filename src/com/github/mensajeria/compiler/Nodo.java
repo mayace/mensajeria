@@ -98,6 +98,7 @@ public class Nodo {
             case STMT://Nada aqui....
                 break;
             case IF:
+                exec_if(pila, tabla_simbolos, errores);
                 break;
             case WHILE:
                 break;
@@ -714,6 +715,44 @@ public class Nodo {
             errors.add(new Err("No existe la variable: " + id_name, id_info, Err.TIPO.SEMANTICO));
         }
         setVal(r_val);
+    }
+
+    private void exec_if(Object pila, Object tabla_simbolos, Object errores) 
+    {
+        LinkedList errs = (LinkedList) errores;
+        Nodo l = getLeft();
+        Nodo r = getRight();
+        
+        Attr lAttr = (Attr)l.getVal();
+        Attr rAttr = (Attr)r.getVal();
+        
+        Attr cuerpo = (Attr) rAttr.getAttr("val");
+        Nodo ifNodo = cuerpo.getNodo("if");
+        Nodo elseNodo = cuerpo.getNodo("else");
+        
+        //Nodo condicion = lAttr.getNodo("val");
+        Nodo condicion = lAttr.getNodo("val");
+        Nodo ifElse = rAttr.getNodo("val");
+       
+        condicion.exec(pila, tabla_simbolos, errores);
+        
+        Attr ResCondicion = (Attr) condicion.getVal();
+        Boolean buleano = ResCondicion.getBoolean("val");
+        
+        
+        
+        
+        if(buleano)
+        {
+            ifNodo.exec(pila, tabla_simbolos, errores);
+        }
+        else
+        {
+            elseNodo.exec(pila, tabla_simbolos, errores);
+        }
+        
+        
+        
     }
 
 //<editor-fold defaultstate="collapsed" desc="CONSTANTES">
