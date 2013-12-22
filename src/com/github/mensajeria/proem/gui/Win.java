@@ -5,10 +5,16 @@
  */
 package com.github.mensajeria.proem.gui;
 
+import com.github.mensajeria.compiler.Err;
+import com.github.mensajeria.compiler.Nodo;
+import com.github.mensajeria.compiler.Sim;
 import com.github.mensajeria.compiler.proem.Parser;
 import com.github.mensajeria.compiler.proem.Scanner;
 import java.io.IOException;
 import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -235,6 +241,17 @@ public class Win extends javax.swing.JFrame {
                 Logger.getLogger(Win.class.getName()).log(Level.SEVERE, null, ex);
             }
             
+            ArrayList data = new ArrayList();
+            HashMap<String,Sim> table = new HashMap<>();
+            LinkedList<Err> errs = new LinkedList(p.errors);
+            
+            for (Nodo nodo : p.nodos) {
+                nodo.exec(data, table, errs);
+            }
+            
+            for (Err err : errs) {
+                err.println();
+            }
         }
     }//GEN-LAST:event_transmitirMenuItemActionPerformed
 

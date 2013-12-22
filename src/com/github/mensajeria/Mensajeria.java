@@ -1,22 +1,20 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package com.github.mensajeria;
 
-/**
- *
- * @author ce
- */
+import java.util.ArrayList;
+import java.util.Arrays;
+
 public class Mensajeria {
 
     /**
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-        // TODO code application logic here
+        ArrayList l = new ArrayList();
+        System.out.println(l.size());
+        l.add(null);
+        l.add(null);
+        System.err.println(l.get(0));
+        System.out.println(l.size());
     }
-    
+
 }

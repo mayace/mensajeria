@@ -38,23 +38,6 @@ parser code {:
 :};
 
 action code{:
-    Sim getSim(String key){
-        return parser.symtable.get(key);
-    }
-    Sim addSim(String name,String type,Object data){
-        //pre
-        System.out.println("Added Sim: " + name);
-        //mid
-        int pos = parser.p;
-        String key = name;
-        Sim val = new Sim(name,type,pos);
-        parser.symtable.put(key,val);
-        parser.pila[pos] = data;
-        //post
-        parser.p++;
-        System.out.println("SimTable Size: " + parser.symtable.size());
-        return val;
-    }
 
     void report_error(String msg,Object info){
         parser.report_error(msg,info);
@@ -80,48 +63,60 @@ non terminal    Attr        begin,input,stmt_list,stmt,declaracion,asignacion,co
                             expr_list_p,control_body,println
 							;
 /****************************************************************************************/
-begin       ::= input   {:System.out.println("Compiled...");:}
+begin       ::= input:x   
+                {:
+                    addNodo(x.getNodo("nodo"));
+                    System.out.println("Compiled...");
+                :}
                 |
                 ;
 // *********************************************************************************
 // Input - Contenido de la entrada
 // *********************************************************************************
-input       ::=	stmt_list
+input       ::=	stmt_list:x     {:RESULT = x;:}
                 ;
 
-stmt_list   ::= stmt_list stmt
-                |stmt
+stmt_list   ::= stmt_list:l stmt:x
+                {:
+                    Nodo nodo = new Nodo (Nodo.OPERACION.STMT,l.getNodo("nodo"),x.getNodo("nodo"));
+                    RESULT = new Attr("nodo",nodo);
+                :}
+                |stmt:x
+                {:RESULT = x;:}
                 ;
 stmt        ::= declaracion:x   {:RESULT = x;:}
                 |asignacion:x   {:RESULT = x;:}
                 |esperar:x      {:RESULT = x;:}
                 |enviar:x       {:RESULT = x;:}
                 |control:x      {:RESULT = x;:}
-                |println:x
+                |println:x      {:RESULT = x;:}
                 ;
 println     ::= PRINTLN expr:e PCOMA
                 {:
-                    addNodo(new Nodo(Nodo.OPERACION.PRINTLN,e.getNodo("nodo"),null));
+                    Nodo nodo = new Nodo(Nodo.OPERACION.PRINTLN,e.getNodo("nodo"),null);
+                    RESULT = new Attr("nodo",nodo);
                 :}
                 ;
 declaracion ::= id_list:l IS tipo:t PCOMA
                 {:
-                    addNodo(new Nodo(
+                    Nodo nodo = new Nodo(
                                     Nodo.OPERACION.DECLARACION,
-                                    new Nodo(new Attr("val",t),false),
-                                    new Nodo(new Attr("val",l.get("list")),false))
+                                    new Nodo(new Attr("val",t.get("tipo")),false),
+                                    new Nodo(new Attr("val",l.get("list")),false)
                                     );
+                    RESULT = new Attr("nodo",nodo);
 
                 :}
                 ;
 asignacion  ::= expr:e EQUAL id_list:l PCOMA
                 {:
                     
-                    addNodo(new Nodo(
-                                    Nodo.OPERACION.ASIGNACION,
-                                    new Nodo(new Attr("val",l.get("list")),false),
-                                    e.getNodo("nodo"),
-                                    ));
+                    Nodo nodo = new Nodo(
+                                        Nodo.OPERACION.ASIGNACION,
+                                        new Nodo(new Attr("val",l.get("list")),false),
+                                        e.getNodo("nodo")
+                                        );
+                    RESULT = new Attr("nodo",nodo);
 
                 :}
                 |expr_list:e LP params:p RP EQUAL id_list:l PCOMA
@@ -135,23 +130,26 @@ asignacion  ::= expr:e EQUAL id_list:l PCOMA
                         e.set("params",p.getList("list"));
                         //e.set("list",l.get("list"));  
 
-                        addNodo(new Nodo(
-                                        Nodo.OPERACION.ASIGNACION,
-                                        new Nodo(new Attr("val",l.get("list")),false),
-                                        new Nodo(e,false)
-                                        ));
+                        Nodo nodo = new Nodo(
+                                            Nodo.OPERACION.ASIGNACION,
+                                            new Nodo(new Attr("val",l.get("list")),false),
+                                            new Nodo(e,false)
+                                            );
+
+                        RESULT = new Attr("nodo",nodo);
                     }   
                 :}
                 ;
 esperar     ::= WAIT LP expr:e RP PCOMA
                 {:
-                    addNodo(new Nodo(Nodo.OPERACION.ESPERAR,e.getNodo("nodo"),null));
-
+                    Nodo nodo = new Nodo(Nodo.OPERACION.ESPERAR,e.getNodo("nodo"),null);
+                    RESULT = new Attr("nodo",nodo);
                 :}
                 ;
 enviar      ::= SEND LP expr:e RP PCOMA
                 {:
-                    addNodo(new Nodo(Nodo.OPERACION.ENVIAR,e.getNodo("nodo"),null));
+                    Nodo nodo = new Nodo(Nodo.OPERACION.ENVIAR,e.getNodo("nodo"),null);
+                    RESULT = new Attr("nodo",nodo);
                 :}
                 ;
 
@@ -274,7 +272,7 @@ boolean         ::= BOOLEAN:x   {:
                                     Attr a = new Attr();
 
                                     a.set("val",x);
-                                    a.set("type","boolean");
+                                    a.set("tipo","boolean");
                                     a.set("info",CUP$Parser$stack.peek());
                                     a.set("nodo",new Nodo(a,false));
                                     RESULT = a;
@@ -283,7 +281,7 @@ boolean         ::= BOOLEAN:x   {:
 string          ::= STRING:x     {:
                                     Attr a = new Attr();
                                     a.set("val",x);
-                                    a.set("type","string");
+                                    a.set("tipo","string");
                                     a.set("info",CUP$Parser$stack.peek());
                                     a.set("nodo",new Nodo(a,false));
                                     RESULT = a;
@@ -292,7 +290,7 @@ string          ::= STRING:x     {:
 int             ::= INT:x       {:
                                     Attr a = new Attr();
                                     a.set("val",x);
-                                    a.set("type","int");
+                                    a.set("tipo","int");
                                     a.set("info",CUP$Parser$stack.peek());
                                     a.set("nodo",new Nodo(a,false));
                                     RESULT = a;
@@ -300,20 +298,13 @@ int             ::= INT:x       {:
                     ;
 id              ::= ID:x        {:
                                     String key = x;
-                                    String type = null;
+                                    String tipo = null;
                                     boolean exists = false;
-
-                                    Sim sim = getSim(key);
-
-                                    if(sim != null){
-                                        type = sim.getType();
-                                        exists = true;
-                                    }
 
 
                                     Attr a = new Attr();
                                     a.set("val",key);
-                                    a.set("type",type);
+                                    a.set("tipo",tipo);
                                     a.set("id",true);
                                     a.set("exists",exists);
                                     a.set("info",CUP$Parser$stack.peek());
@@ -322,7 +313,7 @@ id              ::= ID:x        {:
                                 :}
                     ;
 
-params          ::= expr_list_p:x     {:RESULT = x;:}
+params          ::= expr_list_p:x   {:RESULT = x;:}
                     |               {:RESULT = new Attr();:}
                     ;
                 // solo puede ser (cola | lista).funcion
@@ -375,17 +366,18 @@ expr_list_p     ::= expr_list_p:l COMA expr:x
                         RESULT = a;
                     :}
                     ;
-control         ::= while
-                    |for
-                    |if
+control         ::= while:x     {:RESULT = x;:}
+                    |for:x      {:RESULT = x;:}
+                    |if:x       {:RESULT = x;:}
                     ;
 while           ::= WHILE LP expr:e RP LL1 control_body:x LL2
                     {:
                         Nodo nodo = new Nodo(
-                                        Nodo.OPERACION.WHILE,
-                                        e.getNodo("nodo"),
-                                        x.getNodo("nodo")
-                                        );
+                                            Nodo.OPERACION.WHILE,
+                                            new Nodo(new Attr("val",e),false),
+                                            new Nodo(new Attr("val",x),false)
+                                            );
+                        RESULT = new Attr("nodo",nodo); 
                     :}
                     ;
 for             ::= FOR LP id:id TO expr:e RP LL1 control_body:x LL2
@@ -394,11 +386,12 @@ for             ::= FOR LP id:id TO expr:e RP LL1 control_body:x LL2
                         Attr val = new Attr();
                         val.set("id",id);
                         val.set("expr",e.getNodo("nodo"));
-                        addNodo(new Nodo(
-                                        Nodo.OPERACION.FOR,
-                                        new Nodo(new Attr("val",val),false),
-                                        x.getNodo("nodo")
-                                        ));
+                        Nodo nodo = new Nodo(
+                                            Nodo.OPERACION.FOR,
+                                            new Nodo(new Attr("val",val),false),
+                                            new Nodo(new Attr("val",x),false)
+                                            );
+                        RESULT = new Attr("nodo",nodo);
                     :}
                     ;
 if              ::= IF LP expr:e RP LL1 control_body:x LL2 elseif:x1
@@ -408,15 +401,17 @@ if              ::= IF LP expr:e RP LL1 control_body:x LL2 elseif:x1
                         val.set("if",x.getNodo("nodo"));
                         val.set("else",x1.getNodo("nodo"));
 
-                        addNodo(new Nodo(
-                                        Nodo.OPERACION.IF,
-                                        e.getNodo("nodo"),
-                                        new Nodo(new Attr("val",val),false)
-                                        ));
+                        Nodo nodo = new Nodo(
+                                            Nodo.OPERACION.IF,
+                                            new Nodo(new Attr("val",e),false),
+                                            new Nodo(new Attr("val",val),false)
+                                            );
+
+                        RESULT = new Attr("nodo",nodo);
                     :}
                     ;
 elseif          ::= ELSE LL1 control_body:x LL2 {:RESULT = x;:}
-                    |{:RESULT = new Attr();:}
+                    |                           {:RESULT = new Attr();:}
                     ;
 
 control_body    ::= input:x {:RESULT = x;:}

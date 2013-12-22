@@ -1,8 +1,11 @@
 package com.github.mensajeria.compiler;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class Nodo {
 
@@ -45,47 +48,53 @@ public class Nodo {
      * Realiza la operacion indicada
      *
      * @param pila
-     * @param simTable
-     * @param errs
+     * @param tabla_simbolos
+     * @param errores
      */
-    public void exec(Object pila, Object simTable, Object errs) {
+    public void exec(Object pila, Object tabla_simbolos, Object errores) {
         // pre 
-        execNode(getLeft(), pila, simTable, errs);
-        execNode(getRight(), pila, simTable, errs);
+        exec_nodo(getLeft(), pila, tabla_simbolos, errores);
+        exec_nodo(getRight(), pila, tabla_simbolos, errores);
         final OPERACION oper = getOperation();
-//        System.err.println(oper);
-
+        //
         switch (oper) {
             case RESTA:
-                execResta(pila, simTable, errs);
+                exec_resta(pila, tabla_simbolos, errores);
                 break;
             case SUMA:
-                execSuma(pila, simTable, errs);
+                execSuma(pila, tabla_simbolos, errores);
                 break;
             case MULTIPLICACION:
-                execMultiplicacion(pila, simTable, errs);
+                execMultiplicacion(pila, tabla_simbolos, errores);
                 break;
             case DIVISION:
-                execDivision(pila,simTable,errs);
+                execDivision(pila, tabla_simbolos, errores);
                 break;
             case LTHAN:
-                execMenorQue(pila,simTable,errs);
+                execMenorQue(pila, tabla_simbolos, errores);
                 break;
             case BTHAN:
+                execMayorQue(pila, tabla_simbolos, errores);
                 break;
             case NEQUAL:
+                execNoIgual(pila, tabla_simbolos, errores);//falta
                 break;
             case DEQUAL:
+                execIgual(pila, tabla_simbolos, errores);//falta
                 break;
             case LETHAN:
+                execMenorIgualQue(pila, tabla_simbolos, errores);
                 break;
             case BETHAN:
+                execMayorIgualQue(pila, tabla_simbolos, errores);
                 break;
             case OR:
+                exec_or(pila, tabla_simbolos, errores);
                 break;
             case AND:
+                exec_and(pila, tabla_simbolos, errores);
                 break;
-            case STMT:
+            case STMT://Nada aqui....
                 break;
             case IF:
                 break;
@@ -94,19 +103,24 @@ public class Nodo {
             case FOR:
                 break;
             case ASIGNACION:
-                exec_asignacion(pila, simTable, errs);
+                exec_asignacion(pila, tabla_simbolos, errores);
                 break;
             case ESPERAR:
+                exec_esperar(pila, tabla_simbolos, errores);
                 break;
             case ENVIAR:
+                exec_enviar(pila, tabla_simbolos, errores);
                 break;
             case PRINTLN:
-                exec_println(pila, simTable, errs);
+                exec_println(pila, tabla_simbolos, errores);
                 break;
             case ID:
                 if (isLeaf()) {
-                    execLeaf(pila, simTable, errs);
+                    exec_leaf(pila, tabla_simbolos, errores);
                 }
+                break;
+            case DECLARACION:
+                exec_declaracion(pila, tabla_simbolos, errores);
                 break;
             default:
                 throw new AssertionError(getOperation().name());
@@ -114,289 +128,445 @@ public class Nodo {
         // post
     }
 
-    private void execNode(Nodo nodo, Object pila, Object simTable, Object errs) {
+    private void exec_nodo(Nodo nodo, Object pila, Object simTable, Object errs) {
         if (nodo != null) {
             nodo.exec(pila, simTable, errs);
         }
     }
 
-    private void execLeaf(Object pila, Object simTable, Object errs) {
-        Object v = null;
-        Object objr = getRef();
-        Object objp = pila;
-        Object objt = simTable;
-        Object obje = errs;
+    private void exec_leaf(Object pila, Object simTable, Object errs) {
+
+        ArrayList data = (ArrayList) pila;
+        HashMap<String, Sim> table = (HashMap<String, Sim>) simTable;
+        LinkedList<Err> errors = (LinkedList<Err>) errs;
+
+        Attr a = (Attr) getRef(); // atributo que trae
+        Attr b = new Attr(); // atributo nuevo a enviar
+
         if (isId()) {
-            // pila
-            if (objp instanceof Object[]) {
-                Object[] data = (Object[]) objp;
-                // simtable
-                if (objt instanceof HashMap) {
-                    HashMap<String, Sim> map = (HashMap) objt;
-                    // errs
-                    if (obje instanceof LinkedList) {
-                        LinkedList<Err> errors = (LinkedList) obje;
-                        // ref
-                        if (objr instanceof Attr) {
-                            Attr a = (Attr) objr;
+            String var_name = a.getString("val");
+            if (table.containsKey(var_name)) {
+                Sim var_simbolo = table.get(var_name);
+                Object var_val = data.get(var_simbolo.getPos());
 
-                            String name = a.getString("val");
+                b.set("val", var_val);
+                b.set("tipo", var_simbolo.getType());
+                b.set("info", a.get("info"));
 
-                            if (map.containsKey(name)) {
-                                //setVal(data[map.get(name).getPos()]);
-                                Sim simbolo = map.get(name);
-                                Attr b = new Attr();
-                                Object valSimbolo = data[simbolo.getPos()];
-                                        
-                                b.set("val", valSimbolo);
-                                b.set("type", simbolo.getType());
-                                b.set("info", a.get("info"));
-                                
-                                setVal(b);
-                                
-                            } else {
-                                errors.add(new Err(name, a.getSymbol("info"), Err.TIPO.SEMANTICO));
-                            }
-                        }
-                    }
-
-                }
-
+            } else {
+                errors.add(new Err("Variable no declarada: " + var_name, a.get("info"), Err.TIPO.SEMANTICO));
             }
 
         } else {
-            if (objr instanceof Attr) {
-                
-                Attr a = (Attr) objr;
-                v = a.get("val");
-                //setVal(v);
-                
-                Attr b = new Attr();
-                b.set("type", a.get("type"));
-                b.set("val", a.get("val"));
-                b.set("info", a.get("info"));
-                setVal(b);
-            }
+            b.set("tipo", a.get("tipo"));
+            b.set("val", a.get("val"));
+            b.set("info", a.get("info"));
         }
-
-        
+        setVal(b);
     }
 
-    private void execResta(Object pila, Object simTable, Object errs) {
-        LinkedList errores = (LinkedList)errs;
+    private void exec_resta(Object pila, Object simTable, Object errs) {
+        Object info = (getRef() == null ? null : ((Attr) getRef()).get("info"));
+        LinkedList errores = (LinkedList) errs;
         Nodo l = getLeft();
         Nodo r = getRight();
-        
-        Attr lAtrib = (Attr)l.getVal();
-        Attr rAtrib = (Attr)r.getVal();
-        
-        String lTipo = lAtrib.getString("type");
-        String rTipo = rAtrib.getString("type");
-        
-        
-        
-        if((lTipo.equals("int"))&&(rTipo.equals("int")))
-        {
+
+        Attr lAtrib = (Attr) l.getVal();
+        Attr rAtrib = (Attr) r.getVal();
+
+        String lTipo = lAtrib.getString("tipo");
+        String rTipo = rAtrib.getString("tipo");
+
+        if ((lTipo.equals("int")) && (rTipo.equals("int"))) {
             Integer lValor = lAtrib.getInteger("val");
             Integer rValor = rAtrib.getInteger("val");
-        
+
             Attr attrResult = new Attr();
-            attrResult.set("type", "int");
-            attrResult.set("val", (lValor-rValor));
+            attrResult.set("tipo", "int");
+            attrResult.set("val", (lValor - rValor));
             setVal(attrResult);
-        }
-        else
-        {
-            Err nuevoError = new Err("error: los tipos no son enteros", null, Err.TIPO.SEMANTICO);
-            errores.add(nuevoError);  
+        } else {
+            Err nuevoError = new Err("error: los tipos no son enteros", info, Err.TIPO.SEMANTICO);
+            errores.add(nuevoError);
         }
     }
 
     private void execSuma(Object pila, Object simTable, Object errs) {
-        LinkedList errores = (LinkedList)errs;
+        Object info = (getRef() == null ? null : ((Attr) getRef()).get("info"));
+        LinkedList errores = (LinkedList) errs;
         Nodo l = getLeft();
         Nodo r = getRight();
-        
-        Attr lAtrib = (Attr)l.getVal();
-        Attr rAtrib = (Attr)r.getVal();
-        
-        String lTipo = lAtrib.getString("type");
-        String rTipo = rAtrib.getString("type");
-        
-        if((lTipo.equals("string"))||(rTipo.equals("string")))
-        {
+
+        Attr lAtrib = (Attr) l.getVal();
+        Attr rAtrib = (Attr) r.getVal();
+
+        String lTipo = lAtrib.getString("tipo");
+        String rTipo = rAtrib.getString("tipo");
+
+        if ((lTipo.equals("string")) || (rTipo.equals("string"))) {
             String lvalor = lAtrib.getString("val");
             String rValor = rAtrib.getString("val");
-            String res = lvalor+rValor;
+            String res = lvalor + rValor;
             //setVal(res);
-            
-            
+
             Attr attrResult = new Attr();
-            attrResult.set("type", "string");
+            attrResult.set("tipo", "string");
             attrResult.set("val", (res));
             setVal(attrResult);
-        }
-        
-        else if((lTipo.equals("int"))&&(rTipo.equals("int")))
-        {
+        } else if ((lTipo.equals("int")) && (rTipo.equals("int"))) {
             Integer lValor = lAtrib.getInteger("val");
             Integer rValor = rAtrib.getInteger("val");
             //setVal(lValor-rValor);
-            int valOperacion = lValor+rValor;
-            
+            int valOperacion = lValor + rValor;
+
             Attr attrResult = new Attr();
-            attrResult.set("type", "int");
+            attrResult.set("tipo", "int");
             attrResult.set("val", (valOperacion));
             setVal(attrResult);
-        }
-        else
-        {
-            Err nuevoError = new Err("error de tipos, no coinciden", null, Err.TIPO.SEMANTICO);
-            errores.add(nuevoError);  
+        } else {
+            Err nuevoError = new Err("error de tipos, no coinciden", info, Err.TIPO.SEMANTICO);
+            errores.add(nuevoError);
         }
     }
 
     private void execMultiplicacion(Object pila, Object simTable, Object errs) {
-        LinkedList errores = (LinkedList)errs;
+        Object info = (getRef() == null ? null : ((Attr) getRef()).get("info"));
+        LinkedList errores = (LinkedList) errs;
         Nodo l = getLeft();
         Nodo r = getRight();
-        
-        Attr lAtrib = (Attr)l.getVal();
-        Attr rAtrib = (Attr)r.getVal();
-        
-        String lTipo = lAtrib.getString("type");
-        String rTipo = rAtrib.getString("type");
-        
-        
-        
-        if((lTipo.equals("int"))&&(rTipo.equals("int")))
-        {
+
+        Attr lAtrib = (Attr) l.getVal();
+        Attr rAtrib = (Attr) r.getVal();
+
+        String lTipo = lAtrib.getString("tipo");
+        String rTipo = rAtrib.getString("tipo");
+
+        if ((lTipo.equals("int")) && (rTipo.equals("int"))) {
             Integer lValor = lAtrib.getInteger("val");
             Integer rValor = rAtrib.getInteger("val");
-            int valOperacion = lValor*rValor;
-            
+            int valOperacion = lValor * rValor;
+
             Attr attrResult = new Attr();
-            attrResult.set("type", "int");
+            attrResult.set("tipo", "int");
             attrResult.set("val", (valOperacion));
             setVal(attrResult);
+        } else {
+            Err nuevoError = new Err("error: los tipos no son enteros", info, Err.TIPO.SEMANTICO);
+            errores.add(nuevoError);
         }
-        else
-        {
-            Err nuevoError = new Err("error: los tipos no son enteros", null, Err.TIPO.SEMANTICO);
-            errores.add(nuevoError);  
-        }
-        
+
     }
 
     private void execDivision(Object pila, Object simTable, Object errs) {
-        LinkedList errores =(LinkedList)errs;
+        Object info = (getRef() == null ? null : ((Attr) getRef()).get("info"));
+        LinkedList errores = (LinkedList) errs;
         Nodo l = getLeft();
         Nodo r = getRight();
-        
-        Attr lAtrib=(Attr)l.getVal();
-        Attr rAtrib=(Attr)r.getVal();
-        
-        String lTipo = lAtrib.getString("type");
-        String rTipo = rAtrib.getString("type");
-        
-        
-        
-        if((lTipo.equals("int"))&&(rTipo.equals("int")))
-        {
+
+        Attr lAtrib = (Attr) l.getVal();
+        Attr rAtrib = (Attr) r.getVal();
+
+        String lTipo = lAtrib.getString("tipo");
+        String rTipo = rAtrib.getString("tipo");
+
+        if ((lTipo.equals("int")) && (rTipo.equals("int"))) {
             Integer lValor = lAtrib.getInteger("val");
             Integer rValor = rAtrib.getInteger("val");
-            int valDivision = lValor/rValor;
-            
+            int valDivision = lValor / rValor;
+
             Attr attrResult = new Attr();
-            attrResult.set("type", "int");
+            attrResult.set("tipo", "int");
             attrResult.set("val", (valDivision));
             setVal(attrResult);
-        }
-        else
-        {
-            Err nuevoError = new Err("error: los tipos no son enteros", null, Err.TIPO.SEMANTICO);
-            errores.add(nuevoError);  
+        } else {
+            Err nuevoError = new Err("error: los tipos no son enteros", info, Err.TIPO.SEMANTICO);
+            errores.add(nuevoError);
         }
     }
 
     private void exec_asignacion(Object pila, Object simTable, Object errs) {
-        Object expr = getLeft().getVal();
-        Object objr = getRight().getVal();
+        ArrayList data = data = (ArrayList) pila;
+        HashMap<String, Sim> table = (HashMap) simTable;
+        LinkedList<Err> errors = (LinkedList<Err>) errs;
 
-        Object[] data = new Object[100];
-        HashMap<String, Sim> tabla = new HashMap<>();
-        LinkedList<Err> errores = new LinkedList<>();
-        ArrayList<Attr> ids;
+        Nodo l = getLeft();
+        Nodo r = getRight();
+        Object lval = l.getVal();
+        Object rval = r.getVal();
 
-        if (pila instanceof Object[]) {
-            data = (Object[]) pila;
-        }
-        if (simTable instanceof HashMap) {
-            tabla = (HashMap) simTable;
-        }
-        if (errs instanceof LinkedList) {
-            errores = (LinkedList<Err>) errs;
-        }
+        Attr lattr = (Attr) lval;
+        Attr rattr = (Attr) rval;
 
-        if (objr instanceof ArrayList) {
-            ids = (ArrayList) objr;
+        ArrayList<Attr> vars = lattr.getList("val");
+        String expr_tipo = rattr.getString("tipo");
+        Object expr_val = rattr.get("val");
 
-            for (Attr attr : ids) {
-                final String idname = attr.getString("val");
-                System.err.println(idname + "=" + expr);
-                if (tabla.containsKey(idname)) {
-                    Sim sim = tabla.get(idname);
-                    data[sim.getPos()] = expr;
+        for (Attr var : vars) {
+            String var_name = var.getString("val");
+            Object var_info = var.get("info");
+
+            if (table.containsKey(var_name)) {
+                Sim var_sim = table.get(var_name);
+                String var_tipo = var_sim.getType();
+
+                if (var_tipo.equals(expr_tipo)) {
+                    data.set(var_sim.getPos(), expr_val);
                 } else {
-                    errores.add(new Err("No exista la variable", attr.getSymbol("info"), Err.TIPO.SEMANTICO));
+                    errors.add(new Err("Incompatible tipos en asignacion: " + var_tipo + "=" + expr_tipo, var_info, Err.TIPO.SEMANTICO));
                 }
+            } else {
+                errors.add(new Err("La variable no existe: " + var_name, var_info, Err.TIPO.SEMANTICO));
             }
         }
 
     }
 
     private void exec_println(Object pila, Object simTable, Object errs) {
-        System.out.println(getLeft());
+        final Attr attr = (Attr) getLeft().getVal();
+        final Object valor = attr.get("val");
+        System.out.println(valor);
     }
 
-    private void execMenorQue(Object pila, Object simTable, Object errs) {
-        LinkedList errores =(LinkedList)errs;
+    private void execMenorQue(Object pila, Object simTable, Object errores) {
+        Object info = (getRef() == null ? null : ((Attr) getRef()).get("info"));
+        LinkedList errors = (LinkedList) errores;
+
         Nodo l = getLeft();
         Nodo r = getRight();
-        
-        Attr lAtrib=(Attr)l.getVal();
-        Attr rAtrib=(Attr)r.getVal();
-        
-        String lTipo = lAtrib.getString("type");
-        String rTipo = rAtrib.getString("type");
-        
-        
-        
-        if((lTipo.equals("boolean"))&&(rTipo.equals("boolean")))
-        {
-            
+
+        Attr lAtrib = (Attr) l.getVal();
+        Attr rAtrib = (Attr) r.getVal();
+
+        String lTipo = lAtrib.getString("tipo");
+        String rTipo = rAtrib.getString("tipo");
+
+        if ((lTipo.equals("int")) && (rTipo.equals("int"))) {
+
             Integer lValor = lAtrib.getInteger("val");
             Integer rValor = rAtrib.getInteger("val");
-            int valDivision = lValor/rValor;
-            
+            boolean valorResultado = lValor < rValor;
+
             Attr attrResult = new Attr();
-            attrResult.set("type", "int");
-            attrResult.set("val", (valDivision));
+            attrResult.set("tipo", "boolean");
+            attrResult.set("val", (valorResultado));
             setVal(attrResult);
+        } else {
+            Err nuevoError = new Err("Tipos incompatibles: " + lTipo + "<" + rTipo, info, Err.TIPO.SEMANTICO);
+            errors.add(nuevoError);
         }
-        else
-        {
-            Err nuevoError = new Err("error: los tipos no son enteros", null, Err.TIPO.SEMANTICO);
-            errores.add(nuevoError);  
+
+    }
+
+    private void exec_declaracion(Object pila, Object simTable, Object errs) {
+        ArrayList data = (ArrayList) pila;
+        HashMap<String, Sim> table = (HashMap<String, Sim>) simTable;
+        LinkedList<Err> errors = (LinkedList<Err>) errs;
+
+        Nodo l = getLeft();
+        Nodo r = getRight();
+        Object lval = l.getVal();
+        Object rval = r.getVal();
+
+        Attr lattr = (Attr) lval;
+        Attr rattr = (Attr) rval;
+
+        String tipo = lattr.getString("val");
+        ArrayList<Attr> vars = rattr.getList("val");
+
+        for (Attr var : vars) {
+            String var_name = var.getString("val");
+            Object var_info = var.get("info");
+            if (table.containsKey(var_name)) {
+                errors.add(new Err("Ya existe una variable con el nombre: " + var_name, var_info, Err.TIPO.SEMANTICO));
+            } else {
+                table.put(var_name, new Sim(var_name, tipo, data.size()));
+                //reservar espacio
+                data.add(null);
+            }
         }
-        
+
+    }
+
+    private void execMayorQue(Object pila, Object tabla_simbolos, Object errores) {
+        Object info = (getRef() == null ? null : ((Attr) getRef()).get("info"));
+        LinkedList errors = (LinkedList) errores;
+
+        Nodo l = getLeft();
+        Nodo r = getRight();
+
+        Attr lAtrib = (Attr) l.getVal();
+        Attr rAtrib = (Attr) r.getVal();
+
+        String lTipo = lAtrib.getString("tipo");
+        String rTipo = rAtrib.getString("tipo");
+
+        if ((lTipo.equals("int")) && (rTipo.equals("int"))) {
+
+            Integer lValor = lAtrib.getInteger("val");
+            Integer rValor = rAtrib.getInteger("val");
+            boolean valorResultado = lValor > rValor;
+
+            Attr attrResult = new Attr();
+            attrResult.set("tipo", "boolean");
+            attrResult.set("val", (valorResultado));
+            setVal(attrResult);
+        } else {
+            Err nuevoError = new Err("Tipos incompatibles: " + lTipo + ">" + rTipo, info, Err.TIPO.SEMANTICO);
+            errors.add(nuevoError);
+        }
+    }
+
+    private void execNoIgual(Object pila, Object tabla_simbolos, Object errores) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    private void execIgual(Object pila, Object tabla_simbolos, Object errores) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    private void execMenorIgualQue(Object pila, Object tabla_simbolos, Object errores) {
+        LinkedList errors = (LinkedList) errores;
+        Object info = (getRef() == null ? null : ((Attr) getRef()).get("info"));
+
+        Nodo l = getLeft();
+        Nodo r = getRight();
+
+        Attr lAtrib = (Attr) l.getVal();
+        Attr rAtrib = (Attr) r.getVal();
+
+        String lTipo = lAtrib.getString("tipo");
+        String rTipo = rAtrib.getString("tipo");
+
+        if ((lTipo.equals("int")) && (rTipo.equals("int"))) {
+
+            Integer lValor = lAtrib.getInteger("val");
+            Integer rValor = rAtrib.getInteger("val");
+            boolean valorResultado = lValor <= rValor;
+
+            Attr attrResult = new Attr();
+            attrResult.set("tipo", "boolean");
+            attrResult.set("val", (valorResultado));
+            setVal(attrResult);
+        } else {
+            Err nuevoError = new Err("Tipos incompatibles: " + lTipo + ">" + rTipo, info, Err.TIPO.SEMANTICO);
+            errors.add(nuevoError);
+        }
+    }
+
+    private void execMayorIgualQue(Object pila, Object tabla_simbolos, Object errores) {
+        Object info = (getRef() == null ? null : ((Attr) getRef()).get("info"));
+        LinkedList errors = (LinkedList) errores;
+        Nodo l = getLeft();
+        Nodo r = getRight();
+
+        Attr lAtrib = (Attr) l.getVal();
+        Attr rAtrib = (Attr) r.getVal();
+
+        String lTipo = lAtrib.getString("tipo");
+        String rTipo = rAtrib.getString("tipo");
+
+        if ((lTipo.equals("int")) && (rTipo.equals("int"))) {
+
+            Integer lValor = lAtrib.getInteger("val");
+            Integer rValor = rAtrib.getInteger("val");
+            boolean valorResultado = lValor >= rValor;
+
+            Attr attrResult = new Attr();
+            attrResult.set("tipo", "boolean");
+            attrResult.set("val", (valorResultado));
+            setVal(attrResult);
+        } else {
+            Err nuevoError = new Err("Tipos incompatibles: " + lTipo + ">" + rTipo, info, Err.TIPO.SEMANTICO);
+            errors.add(nuevoError);
+        }
+    }
+
+    private void exec_or(Object pila, Object tabla_simbolos, Object errores) {
+        Object info = (getRef() == null ? null : ((Attr) getRef()).get("info"));
+        LinkedList errors = (LinkedList) errores;
+        Nodo l = getLeft();
+        Nodo r = getRight();
+
+        Attr lAtrib = (Attr) l.getVal();
+        Attr rAtrib = (Attr) r.getVal();
+
+        String lTipo = lAtrib.getString("tipo");
+        String rTipo = rAtrib.getString("tipo");
+
+        if ((lTipo.equals("boolean")) && (rTipo.equals("boolean"))) {
+
+            Boolean lValor = lAtrib.getBoolean("val");
+            Boolean rValor = rAtrib.getBoolean("val");
+            boolean valorResultado = lValor || rValor;
+
+            Attr attrResult = new Attr();
+            attrResult.set("tipo", "boolean");
+            attrResult.set("val", (valorResultado));
+            setVal(attrResult);
+        } else {
+            Err nuevoError = new Err("Tipos incompatibles: " + lTipo + "or" + rTipo, info, Err.TIPO.SEMANTICO);
+            errors.add(nuevoError);
+        }
+    }
+
+    private void exec_and(Object pila, Object tabla_simbolos, Object errores) {
+        Object info = (getRef() == null ? null : ((Attr) getRef()).get("info"));
+        LinkedList errors = (LinkedList) errores;
+        Nodo l = getLeft();
+        Nodo r = getRight();
+
+        Attr lAtrib = (Attr) l.getVal();
+        Attr rAtrib = (Attr) r.getVal();
+
+        String lTipo = lAtrib.getString("tipo");
+        String rTipo = rAtrib.getString("tipo");
+
+        if ((lTipo.equals("boolean")) && (rTipo.equals("boolean"))) {
+
+            Boolean lValor = lAtrib.getBoolean("val");
+            Boolean rValor = rAtrib.getBoolean("val");
+            boolean valorResultado = lValor && rValor;
+
+            Attr attrResult = new Attr();
+            attrResult.set("tipo", "boolean");
+            attrResult.set("val", (valorResultado));
+            setVal(attrResult);
+        } else {
+            Err nuevoError = new Err("Tipos incompatibles: " + lTipo + "or" + rTipo, info, Err.TIPO.SEMANTICO);
+            errors.add(nuevoError);
+        }
+    }
+
+    private void exec_esperar(Object pila, Object tabla_simbolos, Object errores) {
+        LinkedList<Err> errors = (LinkedList<Err>) errores;
+        Object info = (getRef() == null ? null : ((Attr) getRef()).get("info"));
+
+        Attr expr_attr = (Attr) getLeft().getVal();
+        String expr_tipo = expr_attr.getString("tipo");
+
+        if (expr_tipo.equals("int")) {
+            Integer expr_val = expr_attr.getInteger("val");
+            try {
+                Thread.sleep((long) (expr_val * 1000));
+            } catch (InterruptedException ex) {
+                Logger.getLogger(Nodo.class.getName()).log(Level.SEVERE, null, ex);
+                errors.add(new Err(ex.getMessage(), null, Err.TIPO.SEMANTICO));
+            }
+        } else {
+            errors.add(new Err("Se esperaba un numero entero.", info, Err.TIPO.SEMANTICO));
+        }
+    }
+
+    private void exec_enviar(Object pila, Object tabla_simbolos, Object errores) {
+        Object info = (getRef() == null ? null : ((Attr) getRef()).get("info"));
+        System.out.println("Procesar aqui el comando enviar...");
     }
 
 //<editor-fold defaultstate="collapsed" desc="CONSTANTES">
     public static enum OPERACION {
 
         RESTA, SUMA, MULTIPLICACION, DIVISION, LTHAN, BTHAN, NEQUAL, DEQUAL, LETHAN, BETHAN, OR, AND,
-        STMT, IF, WHILE, FOR, ASIGNACION, ESPERAR, ENVIAR, PRINTLN, ID
+        STMT, IF, WHILE, FOR, ASIGNACION, ESPERAR, ENVIAR, PRINTLN, ID, DECLARACION
     }
 //</editor-fold>
 

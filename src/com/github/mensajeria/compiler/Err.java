@@ -1,15 +1,7 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package com.github.mensajeria.compiler;
 
 import java_cup.runtime.Symbol;
 
-/**
- *
- * @author ce
- */
 public class Err {
 
     public static String ERROR_CONVERT = "No se puede convertir.";
@@ -38,10 +30,13 @@ public class Err {
         LEXICO, SINTACTICO, SEMANTICO
     }
 
-    public Err(String msg, Symbol sym, TIPO type) {
+    public Err(String msg, Object sym, TIPO type) {
         this.msg = msg;
-        this.sym = sym;
         this.TIPO = type;
+
+        if (sym instanceof Symbol) {
+            this.sym = (Symbol) sym;
+        }
     }
 
     public Symbol getSym() {
