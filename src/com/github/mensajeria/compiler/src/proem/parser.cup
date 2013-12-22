@@ -25,7 +25,7 @@ parser code {:
     public LinkedList<Nodo> nodos = new LinkedList<>();
 
     public void report_error(String message, Object info){
-        Err e = new Err(message,null,null);
+        Err e = new Err(message,info,Err.TIPO.SINTACTICO);
 
         if(info instanceof java_cup.runtime.Symbol){
             e.setSym((java_cup.runtime.Symbol)info);
@@ -60,7 +60,7 @@ terminal        String 		KW_INT,KW_STRING,KW_BOOLEAN,KW_QUEUE,KW_LIST,INT,STRING
 non terminal    Attr        begin,input,stmt_list,stmt,declaracion,asignacion,control,id_list,
                             esperar,enviar,tipo,expr,expr1,expr2,expr3,expr4,expr5,
                             id,string,int,boolean,params,expr_list,while,for,if,elseif,
-                            expr_list_p,control_body,println
+                            expr_list_p,control_body,println,funcion
 							;
 /****************************************************************************************/
 begin       ::= input:x   
@@ -119,27 +119,98 @@ asignacion  ::= expr:e EQUAL id_list:l PCOMA
                     RESULT = new Attr("nodo",nodo);
 
                 :}
-                |expr_list:e LP params:p RP EQUAL id_list:l PCOMA
+                |funcion:x EQUAL id_list:l PCOMA
                 {:
-                    Integer count = e.getInteger("count");
-                    if(count == 1){
-                        //id
-                        //funcion
-                        //params
-                        
+                    Nodo nodo = new Nodo(
+                                        Nodo.OPERACION.ASIGNACION,
+                                        new Nodo(new Attr("val",l.get("list")),false),
+                                        x.getNodo("nodo")
+                                        );
+                    RESULT = new Attr("nodo",nodo);
+                :}
+                |funcion:x PCOMA {:RESULT = x;:} 
+                
+                ;
+
+funcion     ::= expr_list:e LP params:p RP
+                {:
+                    Integer e_count = e.getInteger("count");
+                    Integer p_count = e.getInteger("count");
+                    Nodo nodo = null;
+
+                    if(e_count == 2){
                         e.set("params",p.getList("list"));
-                        //e.set("list",l.get("list"));  
+                        Nodo left = new Nodo(new Attr("val",e),false);
+                        nodo = new Nodo(Nodo.OPERACION.FUNCION,left,null);
+                    } else {
+                        report_error("Cola/Arreglo no reconocido...",e.getAttr("id").get("info"));
+                    }
 
-                        Nodo nodo = new Nodo(
-                                            Nodo.OPERACION.ASIGNACION,
-                                            new Nodo(new Attr("val",l.get("list")),false),
-                                            new Nodo(e,false)
-                                            );
-
-                        RESULT = new Attr("nodo",nodo);
-                    }   
+                    RESULT = new Attr("nodo",nodo);
                 :}
                 ;
+params          ::= expr_list_p:x   {:RESULT = x;:}
+                    |               
+                    {:
+                        Attr a =  new Attr();
+                        a.set("list",new ArrayList<Attr>());
+                        a.set("count",0);   
+                        RESULT = a;
+                    :}
+                    ;
+expr_list_p     ::= expr_list_p:l COMA expr:x
+                    {:
+                        l.getList("list").add(x);
+                        l.set("count",l.getInteger("count")+1);
+                        RESULT = l;
+                    :}
+                    |expr:x
+                    {:
+                        Attr a = new Attr();
+                        ArrayList<Attr> l = new ArrayList<>();
+                        l.add(x);
+                        a.set("list",l);
+                        a.set("count",1);
+                        RESULT = a;
+                    :}
+                    ;
+                // solo puede ser (cola | lista).funcion
+expr_list       ::= //expr_list COMA expr
+                    expr_list:l PUNTO expr:x
+                    {:
+                        Boolean isId = x.getBoolean("id");
+                        Integer count = l.getInteger("count") + 1;
+                        l.set("count",count);
+                        if(x != null && isId ){
+
+                            switch(count){
+                                case 2:
+                                    l.set("funcion",x);
+                                break;
+                                default:
+                                    report_error("No existe funcion asociada.",x.get("info"));
+                            }
+
+
+                        } else {
+                            report_error("Se esperaba una funcion...",x.get("info"));
+                        }
+    
+                        RESULT = l;
+                    :}
+                    |expr:x
+                    {:
+                        Boolean isId = x.getBoolean("id");
+                        Attr a = new Attr();
+                        if(x != null && isId ){
+                            a.set("id",x);
+                        } else {
+                            report_error("Se esperaba un identificador",a.get("info"));
+                        }
+                        a.set("count",1);
+                        RESULT = a;
+                    :}
+                    ;
 esperar     ::= WAIT LP expr:e RP PCOMA
                 {:
                     Nodo nodo = new Nodo(Nodo.OPERACION.ESPERAR,e.getNodo("nodo"),null);
@@ -313,59 +384,7 @@ id              ::= ID:x        {:
                                 :}
                     ;
 
-params          ::= expr_list_p:x   {:RESULT = x;:}
-                    |               {:RESULT = new Attr();:}
-                    ;
-                // solo puede ser (cola | lista).funcion
-expr_list       ::= //expr_list COMA expr
-                    expr_list:l PUNTO expr:x
-                    {:
-                        Boolean isId = x.getBoolean("id");
-                        Integer count = l.getInteger("count")+1;
-                        l.set("count",count);
-                        if(x != null && isId ){
 
-                            switch(count){
-                                case 1:
-                                    l.set("funcion",x);
-                                break;
-                                default:
-                                    report_error("No existe funcion asociada.",x.get("info"));
-                            }
-
-
-                        } else {
-                            report_error("Se esperaba un identificador",x.get("info"));
-                        }
-    
-                        RESULT = l;
-                    :}
-                    |expr:x
-                    {:
-                        Boolean isId = x.getBoolean("id");
-                        Attr a = new Attr();
-                        if(x != null && isId ){
-                            a.set("id",x);
-                        } else {
-                            report_error("Se esperaba un identificador",a.get("info"));
-                        }
-                        a.set("count",0);
-                        RESULT = a;
-                    :}
-                    ;
-expr_list_p     ::= expr_list_p:l COMA expr:x
-                    {:
-                        l.getList("list").add(x);
-                        RESULT = l;
-                    :}
-                    |expr:x
-                    {:
-                        Attr a = new Attr();
-                        ArrayList<Attr> l = new ArrayList<>();
-                        a.set("list",x);
-                        RESULT = a;
-                    :}
-                    ;
 control         ::= while:x     {:RESULT = x;:}
                     |for:x      {:RESULT = x;:}
                     |if:x       {:RESULT = x;:}
@@ -403,7 +422,7 @@ if              ::= IF LP expr:e RP LL1 control_body:x LL2 elseif:x1
 
                         Nodo nodo = new Nodo(
                                             Nodo.OPERACION.IF,
-                                            new Nodo(new Attr("val",e),false),
+                                            new Nodo(new Attr("val",e.getNodo("nodo")),false),
                                             new Nodo(new Attr("val",val),false)
                                             );
 

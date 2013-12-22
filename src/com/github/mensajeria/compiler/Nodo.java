@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.Queue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -121,6 +122,9 @@ public class Nodo {
                 break;
             case DECLARACION:
                 exec_declaracion(pila, tabla_simbolos, errores);
+                break;
+            case FUNCION:
+                exec_funcion(pila, tabla_simbolos, errores);
                 break;
             default:
                 throw new AssertionError(getOperation().name());
@@ -381,7 +385,16 @@ public class Nodo {
             } else {
                 table.put(var_name, new Sim(var_name, tipo, data.size()));
                 //reservar espacio
-                data.add(null);
+                switch (tipo) {
+                    case "queue":
+                        data.add(new LinkedList<String>());
+                        break;
+                    case "list":
+                        data.add(new ArrayList<String>());
+                        break;
+                    default:
+                        data.add(null);
+                }
             }
         }
 
@@ -562,11 +575,149 @@ public class Nodo {
         System.out.println("Procesar aqui el comando enviar...");
     }
 
+    private void exec_funcion(Object pila, Object tabla_simbolos, Object errores) {
+        ArrayList data = (ArrayList) pila;
+        HashMap<String, Sim> table = (HashMap<String, Sim>) tabla_simbolos;
+        LinkedList<Err> errors = (LinkedList<Err>) errores;
+
+        Attr l_val = (Attr) getLeft().getVal();
+        Attr base_attr = l_val.getAttr("val");
+
+        Attr id_attr = base_attr.getAttr("id");
+        String id_name = id_attr.getString("val");
+        Object id_info = id_attr.get("info");
+
+        Attr r_val = new Attr();
+
+        if (table.containsKey(id_name)) {
+            Sim id_sim = table.get(id_name);
+            final String id_tipo = id_sim.getType();
+            int id_pos = id_sim.getPos();
+            Attr funcion_attr = base_attr.getAttr("funcion");
+            String funcion_name = funcion_attr.getString("val");
+            Object funcion_info = funcion_attr.get("info");
+            ArrayList<Attr> funcion_params = base_attr.getList("params");
+
+            switch (id_tipo) {
+                case "queue":
+                    Queue cola = (Queue) data.get(id_pos);
+                    switch (funcion_name) {
+                        // INGRESAR
+                        case "ingresar":
+                            if (funcion_params.size() == 1) {
+                                Attr param_attr = funcion_params.get(0);
+                                final Nodo param_nodo = param_attr.getNodo("nodo");
+
+                                param_nodo.exec(pila, tabla_simbolos, errores);
+                                String param_tipo = ((Attr) param_nodo.getVal()).getString("tipo");
+                                if (param_tipo.equals("string")) {
+                                    String param_val = ((Attr) param_nodo.getVal()).getString("val");
+                                    cola.add(param_val);
+                                } else {
+                                    errors.add(new Err("Se esperaba una cadena para funcion: " + funcion_name, funcion_info, Err.TIPO.SEMANTICO));
+                                }
+                            } else {
+                                errors.add(new Err("Se esperaba solo un parametro para funcion: " + funcion_name, funcion_info, Err.TIPO.SEMANTICO));
+                            }
+                            break;
+                        // OBTENER
+                        case "obtener":
+                            if (funcion_params.isEmpty()) {
+                                r_val.set("tipo", "string");
+                                r_val.set("val", cola.poll());
+                            } else {
+                                errors.add(new Err("No se esperaba parametro para funcion: " + funcion_name, funcion_info, Err.TIPO.SEMANTICO));
+                            }
+                            break;
+                        // VACIA
+                        case "vacia":
+                            if (funcion_params.isEmpty()) {
+                                r_val.set("tipo", "boolean");
+                                r_val.set("val", cola.isEmpty());
+                            } else {
+                                errors.add(new Err("No se esperaba parametro para funcion: " + funcion_name, funcion_info, Err.TIPO.SEMANTICO));
+                            }
+                            break;
+                        default:
+                            errors.add(new Err("Operacion no soportada para una cola", funcion_info, Err.TIPO.SEMANTICO));
+                    }
+                    break;
+                case "list":
+                    ArrayList lista = (ArrayList) data.get(id_pos);
+                    switch (funcion_name) {
+                        // INGRESAR
+                        case "ingresar":
+                            if (funcion_params.size() == 1) {
+                                Attr param_attr = funcion_params.get(0);
+                                final Nodo param_nodo = param_attr.getNodo("nodo");
+
+                                param_nodo.exec(pila, tabla_simbolos, errores);
+                                String param_tipo = ((Attr) param_nodo.getVal()).getString("tipo");
+                                if (param_tipo.equals("string")) {
+                                    String param_val = ((Attr) param_nodo.getVal()).getString("val");
+                                    lista.add(param_val);
+                                } else {
+                                    errors.add(new Err("Se esperaba una cadena para funcion: " + funcion_name, funcion_info, Err.TIPO.SEMANTICO));
+                                }
+                            } else {
+                                errors.add(new Err("Se esperaba solo un parametro para funcion: " + funcion_name, funcion_info, Err.TIPO.SEMANTICO));
+                            }
+                            break;
+                        // OBTENER
+                        case "obtener":
+                            if (funcion_params.size() == 1) {
+                                Attr param_attr = funcion_params.get(0);
+                                final Nodo param_nodo = param_attr.getNodo("nodo");
+
+                                param_nodo.exec(pila, tabla_simbolos, errores);
+                                String param_tipo = ((Attr) param_nodo.getVal()).getString("tipo");
+                                if (param_tipo.equals("int")) {
+                                    Integer param_val = ((Attr) param_nodo.getVal()).getInteger("val");
+                                    r_val.set("tipo", "string");
+                                    r_val.set("val", lista.get(param_val));
+                                } else {
+                                    errors.add(new Err("Se esperaba un entero para funcion: " + funcion_name, funcion_info, Err.TIPO.SEMANTICO));
+                                }
+                            } else {
+                                errors.add(new Err("Se esperaba solo un parametro para funcion: " + funcion_name, funcion_info, Err.TIPO.SEMANTICO));
+                            }
+                            break;
+                        // VACIA
+                        case "vacia":
+                            if (funcion_params.isEmpty()) {
+                                r_val.set("tipo", "boolean");
+                                r_val.set("val", lista.isEmpty());
+                            } else {
+                                errors.add(new Err("No se esperaba  parametro para funcion: " + funcion_name, funcion_info, Err.TIPO.SEMANTICO));
+                            }
+                            break;
+                        case "tamaño":
+                            if (funcion_params.isEmpty()) {
+                                r_val.set("tipo", "int");
+                                r_val.set("val", lista.size());
+                            } else {
+                                errors.add(new Err("No se esperaba  parametro para funcion: " + funcion_name, funcion_info, Err.TIPO.SEMANTICO));
+                            }
+                            break;
+                        default:
+                            errors.add(new Err("Operacion no soportada para una lista", funcion_info, Err.TIPO.SEMANTICO));
+                    }
+                    break;
+                default:
+                    errors.add(new Err("Variable no es una cola o arreglo: " + id_name, id_info, Err.TIPO.SEMANTICO));
+            }
+        } else {
+            errors.add(new Err("No existe la variable: " + id_name, id_info, Err.TIPO.SEMANTICO));
+        }
+        setVal(r_val);
+    }
+
 //<editor-fold defaultstate="collapsed" desc="CONSTANTES">
     public static enum OPERACION {
 
         RESTA, SUMA, MULTIPLICACION, DIVISION, LTHAN, BTHAN, NEQUAL, DEQUAL, LETHAN, BETHAN, OR, AND,
-        STMT, IF, WHILE, FOR, ASIGNACION, ESPERAR, ENVIAR, PRINTLN, ID, DECLARACION
+        STMT, IF, WHILE, FOR, ASIGNACION, ESPERAR, ENVIAR, PRINTLN, ID, DECLARACION,
+        FUNCION
     }
 //</editor-fold>
 
